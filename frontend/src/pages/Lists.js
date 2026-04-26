@@ -4,7 +4,7 @@ import { BiArrowBack } from "react-icons/bi";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 import axios from "axios";
 
-const API_URL = "http://localhost:5002";
+const API_URL = "https://cinemate-6k9l.onrender.com";
 
 const emptyQuotes = [
   "GoodBye, Mr.Bond.",
