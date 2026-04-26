@@ -3,7 +3,7 @@ import axios from "axios";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BiArrowBack } from "react-icons/bi";
 
-const API_URL = "http://localhost:5002";
+const API_URL = "https://cinemate-6k9l.onrender.com";
 // const userId = "6729bdee4d96b9e3cf88229b";
 
 
