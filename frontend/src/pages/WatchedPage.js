@@ -5,7 +5,7 @@ import { FaStar, FaRegStar, FaStarHalfAlt } from 'react-icons/fa';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 
-const API_URL = 'http://localhost:5002';
+const API_URL = 'https://cinemate-6k9l.onrender.com';
 
 const WatchedPage = () => {
     const { userId } = useParams();
