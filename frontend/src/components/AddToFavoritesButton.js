@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Heart } from "lucide-react";
 
-const API_URL = "http://localhost:5002/api/user";
+const API_URL = "https://cinemate-6k9l.onrender.com/api/user";
 
 const AddToFavoritesButton = ({ movieId, title, year, posterPath, onStatusChange }) => {
   const [status, setStatus] = useState("default");
