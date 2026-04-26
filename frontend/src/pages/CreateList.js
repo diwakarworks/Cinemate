@@ -4,7 +4,7 @@ import { BiArrowBack, BiX, BiCheck, BiPlus } from "react-icons/bi";
 import { FiSearch } from "react-icons/fi";
 import axios from "axios";
 
-const API_URL = "http://localhost:5002";
+const API_URL = "https://cinemate-6k9l.onrender.com";
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 
