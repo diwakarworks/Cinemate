@@ -5,7 +5,7 @@ import { BiArrowBack } from "react-icons/bi";
 
 
 
-const API_URL = 'http://localhost:5002'
+const API_URL = 'https://cinemate-6k9l.onrender.com'
 const ListPosters = () => {
   const { userId, listId } = useParams();
   const [token, setToken] = useState();
