@@ -3,7 +3,7 @@ import { FaBookmark } from "react-icons/fa";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 
-const API_URL = "http://localhost:5002";
+const API_URL = "https://cinemate-6k9l.onrender.com";
 
 const WatchlistButton = ({ movieId, onStatusChange, type = "movie" }) => {
     const { id } = useParams();
