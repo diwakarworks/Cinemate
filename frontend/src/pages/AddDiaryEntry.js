@@ -25,7 +25,7 @@ const FilmDiaryApp = () => {
   const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 
   // Backend API configuration
-  const API_URL = "http://localhost:5002";
+  const API_URL = "https://cinemate-6k9l.onrender.com";
 
   const searchMovies = useCallback(
     async (query) => {
