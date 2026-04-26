@@ -6,7 +6,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { BiArrowBack } from 'react-icons/bi';
 import { FaStar, FaRegStar, FaStarHalfAlt } from 'react-icons/fa';
 
-const API_URL = 'http://localhost:5002';
+const API_URL = 'https://cinemate-6k9l.onrender.com';
 
 const Profile = ({ }) => {
     const { userId } = useParams();
