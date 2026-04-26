@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams} from "react-router-dom";
 
-const API_URL = 'http://localhost:5002';
+const API_URL = 'https://cinemate-6k9l.onrender.com';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
 
 const Favorites = () => {
