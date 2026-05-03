@@ -12,7 +12,6 @@ const Favorites = () => {
     const [favorites, setFavorites] = useState([]);
     const [error, setError] = useState('');
 
-    // const userId = '6729bdee4d96b9e3cf88229b';
 
     useEffect(() => {
         const fetchFavorites = async () => {
