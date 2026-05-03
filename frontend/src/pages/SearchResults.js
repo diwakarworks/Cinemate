@@ -7,7 +7,7 @@ import { useLocation, Link } from 'react-router-dom';
 const apiKey = process.env.REACT_APP_TMDB_API_KEY;
 
 const SearchResults = () => {
-    const [searchResults, setSearchResults] = useState({ movies: [], shows: [], people: [] });
+    const [searchResults, setSearchResults] = useState({ movies: [], shows: [], people: [], collections: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -71,11 +71,7 @@ const SearchResults = () => {
         const fetchPeople = async () => {
             try {
                 const response = await axios.get('https://api.themoviedb.org/3/search/person', {
-                    params: {
-                        api_key: apiKey,
-                        query,
-                        language: 'en-US'
-                    }
+                    params: { api_key: apiKey, query, language: 'en-US' }
                 });
                 setSearchResults(prev => ({
                     ...prev,
@@ -87,6 +83,25 @@ const SearchResults = () => {
         };
 
         if (query) fetchPeople();
+    }, [query]);
+
+    
+    useEffect(() => {
+        const fetchCollections = async () => {
+            try {
+                const response = await axios.get('https://api.themoviedb.org/3/search/collection', {
+                    params: { api_key: apiKey, query, language: 'en-US' }
+                });
+                setSearchResults(prev => ({
+                    ...prev,
+                    collections: response.data.results || []
+                }));
+            } catch (err) {
+                console.error('Error fetching collections:', err);
+            }
+        };
+
+        if (query) fetchCollections();
     }, [query]);
 
     if (loading) return <p className="text-center">Loading search results...</p>;
@@ -140,14 +155,43 @@ const SearchResults = () => {
                                     </span>
                                     <span className="text-white"> • {person.known_for?.map(work => work.title || work.name).join(', ')}</span>
                                 </p>
-
                             </Link>
                         ))}
                     </div>
                 </div>
             )}
 
-            {searchResults.movies.length === 0 && searchResults.shows.length === 0 && searchResults.people.length === 0 && (
+            
+            {searchResults.collections.length > 0 && (
+                <div className="mt-8">
+                    <h2 className="text-white text-xl ml-1 font-semibold mb-4">Collections</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {searchResults.collections.map(collection => (
+                            <Link
+                                to={`/collection/${collection.id}`}
+                                key={collection.id}
+                                className="border-2 hover:border-green-500 rounded-md p-2 text-center"
+                            >
+                                {collection.poster_path ? (
+                                    <img
+                                        src={`https://image.tmdb.org/t/p/w185${collection.poster_path}`}
+                                        alt={collection.name}
+                                        className="w-full h-auto rounded"
+                                    />
+                                ) : (
+                                    <div className="w-full h-40 bg-gray-700 rounded flex items-center justify-center">
+                                        <span className="text-gray-400 text-sm">No Image</span>
+                                    </div>
+                                )}
+                                <p className="text-blue-400 mt-2 font-medium">{collection.name}</p>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {searchResults.movies.length === 0 && searchResults.shows.length === 0 &&
+             searchResults.people.length === 0 && searchResults.collections.length === 0 && (
                 <p className="text-white mt-6">No results found for "{query}".</p>
             )}
         </div>
