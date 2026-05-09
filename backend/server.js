@@ -9,6 +9,7 @@ const movieRoutes = require('./routes/movieRoutes');
 const diaryRoutes = require('./routes/diaryRoutes');
 const rankingRoutes = require('./routes/rankingRoutes');
 const listRoutes = require('./routes/listsRoutes');
+const searchRoutes = require('./routes/searchRoutes');
  
 dotenv.config();
 connectDB();
@@ -25,6 +26,7 @@ app.use('/api/movies',movieRoutes);
 app.use('/api/diary',diaryRoutes);
 app.use('/api/ranking',rankingRoutes);
 app.use('/api/lists',listRoutes);
+app.use('/api/search',searchRoutes);
 
 const PORT = process.env.PORT || 5002;
 
