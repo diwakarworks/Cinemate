@@ -70,6 +70,7 @@ const Navbar = () => {
             <Link className="text-gray-400 text-lg  font-bold" to="/login"> LOGIN</Link>
             <Link className="text-gray-400 text-lg  font-bold" to="/popular"> PEOPLE</Link>
             <Link className="text-gray-400 text-lg font-bold" to="/studios">STUDIOS</Link>
+            <Link className="text-gray-400 text-lg font-bold" to="/ai/search">SEARCH   ✨AI</Link>
             {userId && (
                 <>
                     <Link className="text-gray-400 text-lg  font-bold" to={`/diary/${userId}`}> DIARY </Link>
