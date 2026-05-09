@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
-const apiURL = "http://localhost:5002";
+const apiURL = "https://cinemate-6k9l.onrender.com";
 
 function AISearch() {
   const [query, setQuery] = useState("");
