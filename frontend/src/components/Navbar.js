@@ -75,6 +75,7 @@ const Navbar = () => {
                 <>
                     <Link className="text-gray-400 text-lg  font-bold" to={`/diary/${userId}`}> DIARY </Link>
                     <Link className="text-gray-400 text-lg  font-bold" to={`profile/${userId}`}> LISTS</Link>
+                    <Link className="text-gray-400 text-lg  font-bold" to={`/people/${userId}`}> ICONS</Link>
                 </>
             )}
             

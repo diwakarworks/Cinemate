@@ -49,6 +49,7 @@ import UpcomingMovies from './pages/Upcoming';
 import Collection from './pages/Collection';
 import PersonImages from './pages/PersonImages';
 import AISearch from './pages/AISearch';
+import PeoplePage from './pages/PeoplePage';
 
 
 
@@ -111,6 +112,7 @@ const App = () => {
         <Route path="/collection/:id" element={<Collection/>} />
         <Route path='/ai/search' element={<AISearch />} />
         <Route path='/person/:id/images' element={<PersonImages />} />
+        <Route path="/people/:userId" element={<PeoplePage />} />
       </Routes>
     </div>
   );
