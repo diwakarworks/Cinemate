@@ -6,7 +6,9 @@ const axios = require('axios');
 const  getUserLists = asyncHandler(async(req,res)=> {
     const {userId} = req.params;
     try{
-        const list = await List.find({user:userId}).sort({updateAt: -1})
+        const list = await List.find()
+        .populate("user", "username profilePic")
+        .sort({updatedAt: -1})
         return res.status(200).json(list);
     }
     catch(error){
