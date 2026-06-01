@@ -94,7 +94,7 @@ const Home = () => {
   return (
     <div className="p-4">
       {/* Title */}
-      <h2 className="absolute -mt-5 text-md ml-3 text-gray-400">
+      <h2 className="absolute -mt-2 text-md ml-3 text-gray-400">
         POPULAR THIS WEEK
       </h2>
 
@@ -102,7 +102,7 @@ const Home = () => {
       <div className="flex justify-end -mt-6">
         <button
           onClick={() => setOpen(!open)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition duration-200"
+          className=" bg-blue-600 mt-3 hover:bg-blue-700 text-white px-1 py-0 rounded-lg shadow-md transition duration-200"
         >
           Movies ▾
         </button>
