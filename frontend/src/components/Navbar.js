@@ -56,6 +56,7 @@ const Navbar = () => {
     { label: 'Studios', to: '/studios' },
     {label: 'Search', to: '/advanced-search'},
     {label: 'lists' ,to: `/${userId}/userlists` },
+    {label: 'sign in',to: '/login' },
     { label: 'Discover ', to: '/ai/search' },
   ];
 
