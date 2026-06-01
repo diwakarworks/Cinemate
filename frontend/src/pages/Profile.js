@@ -137,9 +137,7 @@ const Profile = ({ }) => {
     };
 
 
-    const handleViewLists = () => {
-            navigate(`/user/${user.id}`);
-    }
+    
 
     const getStarRating = (rating) => {
         const fullStars = Math.floor(rating);
@@ -234,14 +232,7 @@ const Profile = ({ }) => {
                         </li>
                     ))}
                 </ul>
-                <div className = "flex justify-end">
-                 <button
-                    onClick={handleViewLists}
-                    className="absolute -mt-2 bg-green-600 text-black px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center gap-2"
-                >
-                    Lists
-                </button>
-                </div>
+               
                 
             </div>
         </div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReviewCard from '../components/ReviewCard';
-import { FaUser } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 const apiKey = process.env.REACT_APP_TMDB_API_KEY;
@@ -124,9 +123,6 @@ const MovieReviews = () => {
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-gray-400 font-semibold ml-7">REVIEWS</h2>
-                <Link to="/userreviews">
-                    <FaUser className="text-white text-2xl cursor-pointer mr-6" />
-                </Link>
             </div>
 
             {/* Tabs */}

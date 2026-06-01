@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import MovieCard from './MovieCard';
+import ShowCard from './ShowCard';
 import { useNavigate, Link } from "react-router-dom";
 import { BiArrowBack } from 'react-icons/bi';
 
@@ -15,12 +16,10 @@ const AdvancedSearch = () => {
 
     useEffect(() => {
         const fetchGenres = async () => {
-            // Fetch both movie and TV genres, merge and deduplicate by name
             const [movieRes, tvRes] = await Promise.all([
                 axios.get(`https://api.themoviedb.org/3/genre/movie/list`, { params: { api_key: apiKey } }),
                 axios.get(`https://api.themoviedb.org/3/genre/tv/list`, { params: { api_key: apiKey } }),
             ]);
-
             const allGenres = [...movieRes.data.genres, ...tvRes.data.genres];
             const unique = Array.from(new Map(allGenres.map(g => [g.name, g])).values());
             unique.sort((a, b) => a.name.localeCompare(b.name));
@@ -37,37 +36,33 @@ const AdvancedSearch = () => {
                 'vote_average.gte': filters.rating || undefined,
             };
 
-            // Fetch movies and series simultaneously
             const [movieRes, tvRes] = await Promise.all([
                 axios.get(`https://api.themoviedb.org/3/discover/movie`, {
-                    params: {
-                        ...params,
-                        primary_release_year: filters.year || undefined,
-                    },
+                    params: { ...params, primary_release_year: filters.year || undefined },
                 }),
                 axios.get(`https://api.themoviedb.org/3/discover/tv`, {
-                    params: {
-                        ...params,
-                        first_air_date_year: filters.year || undefined,
-                    },
+                    params: { ...params, first_air_date_year: filters.year || undefined },
                 }),
             ]);
 
-            // Normalize TV series fields to match movie shape
-            const movies = movieRes.data.results.map(item => ({
-                ...item,
-                mediaType: 'movie',
-            }));
+            const movieBasic = movieRes.data.results.map(item => ({ ...item, mediaType: 'movie' }));
+            const series = tvRes.data.results.map(item => ({ ...item, mediaType: 'tv' }));
 
-            const series = tvRes.data.results.map(item => ({
-                ...item,
-                title: item.name,
-                release_date: item.first_air_date,
-                mediaType: 'tv',
-            }));
+            // Fetch full details + credits for each movie
+            const movieDetails = await Promise.all(
+                movieBasic.slice(0, 9).map(item =>
+                    axios.get(`https://api.themoviedb.org/3/movie/${item.id}`, {
+                        params: { api_key: apiKey, append_to_response: 'credits' },
+                    }).then(res => ({
+                        ...res.data,
+                        mediaType: 'movie',
+                        director: res.data.credits?.crew?.find(p => p.job === 'Director') || null,
+                        cast: res.data.credits?.cast?.slice(0, 5) || [],
+                    }))
+                )
+            );
 
-            // Combine, sort by popularity, limit to 9
-            const combined = [...movies, ...series]
+            const combined = [...movieDetails, ...series]
                 .sort((a, b) => b.popularity - a.popularity)
                 .slice(0, 9);
 
@@ -78,14 +73,12 @@ const AdvancedSearch = () => {
         }
     };
 
-    const handleHome = () => navigate('/');
-
     return (
         <div className="bg-stone-900 min-h-screen rounded shadow-md p-8 sm:p-12 text-white">
             <div className="flex items-center mb-8">
                 <BiArrowBack
                     className="w-8 h-8 cursor-pointer text-white hover:text-blue-500"
-                    onClick={handleHome}
+                    onClick={() => navigate('/')}
                 />
                 <h2 className="text-3xl font-semibold ml-4">Advanced Search</h2>
             </div>
@@ -146,17 +139,15 @@ const AdvancedSearch = () => {
                             key={`${item.mediaType}-${item.id}`}
                             className="movie-card p-2"
                         >
-                            <div className="relative">
-                                
-                                <MovieCard movie={item} />
-                            </div>
+                            {item.mediaType === 'movie'
+                                ? <MovieCard movie={item} />
+                                : <ShowCard show={item} />
+                            }
                         </Link>
                     ))
                 ) : (
                     hasSearched && (
-                        <p className="text-white text-center w-full col-span-full">
-                            No results found.
-                        </p>
+                        <p className="text-white text-center w-full col-span-full">No results found.</p>
                     )
                 )}
             </div>

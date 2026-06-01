@@ -50,6 +50,7 @@ import Collection from './pages/Collection';
 import PersonImages from './pages/PersonImages';
 import AISearch from './pages/AISearch';
 import PeoplePage from './pages/PeoplePage';
+import UserLists from './pages/UserLists';
 
 
 
@@ -113,6 +114,7 @@ const App = () => {
         <Route path='/ai/search' element={<AISearch />} />
         <Route path='/person/:id/images' element={<PersonImages />} />
         <Route path="/people/:userId" element={<PeoplePage />} />
+        <Route path="/:userId/userlists" element={<UserLists />} />
       </Routes>
     </div>
   );
