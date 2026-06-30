@@ -6,6 +6,7 @@ const Series = require('../models/Series');
 const mongoose = require('mongoose');
 
 
+
 const getUserStats = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     try {
@@ -415,8 +416,97 @@ const getFavorites = asyncHandler(async (req, res) => {
         console.error(`Error: ${error.message}`);
         res.status(500).json({ message: 'Failed to fetch favorites' });
     }
+
+});
+
+
+const getFavoriteSeries = asyncHandler(async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).populate('favoriteSeries');
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (!user.favoriteSeries || user.favoriteSeries.length === 0) {
+            return res.status(200).json({ message: "No favorite series found", favoriteSeries: [] });
+        }
+        res.status(200).json(user.favoriteSeries);
+    } catch (error) {
+        console.error(`Error fetching favorite series: ${error.message}`, error);
+        res.status(500).json({ message: "Failed to fetch favorite series", error: error.message });
+    }
+});
+
+const addFavoriteSeries = asyncHandler(async (req, res) => {
+    try {
+        const { tmdbId, title, year, rating, plot, poster_path, vote_average, genre_ids, cast, seasons, episodes } = req.body;
+
+        if (!tmdbId || !title || !poster_path) {
+            return res.status(400).json({ message: "tmdbId, title and poster_path are required" });
+        }
+
+        let series = await Series.findOne({ tmdbId });
+        if (!series) {
+            series = await Series.create({
+                tmdbId, title, year, rating, plot, poster_path,
+                vote_average, genre_ids, cast, seasons, episodes
+            });
+        }
+
+        const alreadyFavorited = await User.exists({
+            _id: req.user._id,
+            favoriteSeries: series._id
+        });
+        if (alreadyFavorited) {
+            return res.status(409).json({ message: "Already in favorites" });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { $push: { favoriteSeries: series._id } },
+            { new: true }
+        ).populate('favoriteSeries');
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(201).json(user.favoriteSeries);
+    } catch (error) {
+        console.error(`Error adding favorite series: ${error.message}`, error);
+        res.status(500).json({ message: "Failed to add favorite series", error: error.message });
+    }
+});
+
+const removeFavoriteSeries = asyncHandler(async (req, res) => {
+    try {
+        const { tmdbId } = req.params;
+
+        const series = await Series.findOne({ tmdbId });
+        if (!series) {
+            return res.status(404).json({ message: "Series not found" });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { $pull: { favoriteSeries: series._id } },
+            { new: true }
+        ).populate('favoriteSeries');
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "Successfully deleted",
+            favoriteSeries: user.favoriteSeries
+        });
+    } catch (error) {
+        console.error(`Error removing favorite series: ${error.message}`, error);
+        res.status(500).json({ message: "Failed to remove favorite series", error: error.message });
+    }
 });
 
 
 
-module.exports = { getUserStats, addToWatchlist, updateStats,deleteStats, getWatchlist,addToFavorites,deleteWatchlistForSpecificMovie,removeFromFavorites,getFavorites };
+
+module.exports = { getUserStats, addToWatchlist, updateStats,deleteStats, getWatchlist,addToFavorites,deleteWatchlistForSpecificMovie,removeFromFavorites,getFavorites,getFavoriteSeries,addFavoriteSeries,removeFavoriteSeries };

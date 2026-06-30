@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
     watchlist: [{ type: String, ref: 'Movie' }],
     seriesWatchlist: [{ type: String, ref: 'Series' }],
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Movie' }],
+    favoriteSeries: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Series' }],
     stats: {
         totalMoviesWatched: { type: Number, default: 0 },
         favoriteGenres: { type: Map, of: Number },

@@ -1,5 +1,5 @@
 const express = require('express');
-const { getUserStats, addToWatchlist, getWatchlist,deleteWatchlistForSpecificMovie,updateStats,deleteStats,addToFavorites, removeFromFavorites, getFavorites } = require('../controllers/userController');
+const { getUserStats, addToWatchlist, getWatchlist,deleteWatchlistForSpecificMovie,updateStats,deleteStats,addToFavorites, removeFromFavorites, getFavorites,addFavoriteSeries,getFavoriteSeries,removeFavoriteSeries } = require('../controllers/userController');
 const {protect} = require('../middleware/authMiddleware');
 const router = express.Router();
 
@@ -12,5 +12,8 @@ router.delete('/:id/stats', deleteStats);
 router.post('/:id/favorites', protect, addToFavorites);
 router.delete('/:id/favorites', protect, removeFromFavorites); 
 router.get('/:id/favorites', protect, getFavorites); 
+router.post('/:id/favorites/series', protect, addFavoriteSeries);
+router.get('/:id/favorites/series', protect, getFavoriteSeries);
+router.delete('/:id/favorites/series/:tmdbId', protect, removeFavoriteSeries);
 
 module.exports = router;

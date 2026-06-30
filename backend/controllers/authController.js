@@ -81,6 +81,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
         stats: user.stats,
         watchlist: user.watchlist,
         favorites: user.favorites,
+        favoriteSeries: user.favoriteSeries
       });
     }
   } catch (error) {
