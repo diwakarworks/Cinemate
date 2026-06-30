@@ -51,6 +51,7 @@ import PersonImages from './pages/PersonImages';
 import AISearch from './pages/AISearch';
 import PeoplePage from './pages/PeoplePage';
 import UserLists from './pages/UserLists';
+import FavoriteSeries from './pages/FavoriteSeries';
 
 
 
@@ -115,6 +116,7 @@ const App = () => {
         <Route path='/person/:id/images' element={<PersonImages />} />
         <Route path="/people/:userId" element={<PeoplePage />} />
         <Route path="/:userId/userlists" element={<UserLists />} />
+        <Route path="/favorite-series" element={<FavoriteSeries/>} />
       </Routes>
     </div>
   );

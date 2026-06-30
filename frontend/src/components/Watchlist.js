@@ -61,7 +61,7 @@ const Watchlist = () => {
 
   return (
     <div className="text-white min-h-screen mt-8">
-      <h1 className="text-2xl font-bold absolute -mt-9 ml-28 text-white mb-8">
+      <h1 className="text-2xl font-bold absolute -mt-8 ml-20 text-white mb-8">
         Watchlist
       </h1>
       <div className="flex items-left">
