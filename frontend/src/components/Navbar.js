@@ -1,9 +1,197 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaSearch, FaTimes } from "react-icons/fa";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import Image from "../image/letterboxd.png";
 
 const API_URL = "https://cinemate-6k9l.onrender.com";
+
+const DiscoverNavDropdown = () => {
+  const [open, setOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState(null); // 'movie' | 'tv' | null
+  const ref = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        setActiveSection(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const goTo = (type, tab) => {
+    setOpen(false);
+    setActiveSection(null);
+    if (type === "genre") {
+      navigate(`/genres?tab=${tab}`);
+    } else if (type === "movie") {
+      navigate(`/countries?tab=${tab}`);
+    } else {
+      navigate(`/series/countries?tab=${tab}`);
+    }
+  };
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className="cine-nav-link"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+        }}
+      >
+        Browse
+        <ChevronDown
+          size={11}
+          style={{
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s",
+          }}
+        />
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 10px)",
+            left: 0,
+            minWidth: "160px",
+            background: "#1a1e2a",
+            border: "1px solid #2a3045",
+            borderRadius: "10px",
+            overflow: "visible",
+            boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+            padding: "6px 0",
+            zIndex: 200,
+          }}
+        >
+          <div
+            style={{ position: "relative" }}
+            onMouseEnter={() => setActiveSection("movie")}
+          >
+            <div
+              className="cine-dropdown-item"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                cursor: "pointer",
+              }}
+            >
+              Movies
+              <ChevronRight size={12} color="#4b5563" />
+            </div>
+
+            {activeSection === "movie" && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: "100%",
+                  minWidth: "160px",
+                  background: "#1a1e2a",
+                  border: "1px solid #2a3045",
+                  borderRadius: "10px",
+                  boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+                  padding: "6px 0",
+                }}
+              >
+                <div
+                  className="cine-dropdown-item"
+                  onClick={() => goTo("movie", "genre")}
+                  style={{ cursor: "pointer" }}
+                >
+                  By Genre
+                </div>
+                <div
+                  className="cine-dropdown-item"
+                  onClick={() => goTo("movie", "country")}
+                  style={{ cursor: "pointer" }}
+                >
+                  By Country
+                </div>
+                <div
+                  className="cine-dropdown-item"
+                  onClick={() => goTo("movie", "language")}
+                  style={{ cursor: "pointer" }}
+                >
+                  By Language
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div
+            style={{ position: "relative" }}
+            onMouseEnter={() => setActiveSection("tv")}
+          >
+            <div
+              className="cine-dropdown-item"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                cursor: "pointer",
+              }}
+            >
+              Series
+              <ChevronRight size={12} color="#4b5563" />
+            </div>
+
+            {activeSection === "tv" && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: "100%",
+                  minWidth: "160px",
+                  background: "#1a1e2a",
+                  border: "1px solid #2a3045",
+                  borderRadius: "10px",
+                  boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+                  padding: "6px 0",
+                }}
+              >
+                 <div
+                  className="cine-dropdown-item"
+                  onClick={() => goTo("tv", "genre")}
+                  style={{ cursor: "pointer" }}
+                >
+                  By Genre
+                </div>
+
+                <div
+                  className="cine-dropdown-item"
+                  onClick={() => goTo("tv", "country")}
+                  style={{ cursor: "pointer" }}
+                >
+                  By Country
+                </div>
+                <div
+                  className="cine-dropdown-item"
+                  onClick={() => goTo("tv", "language")}
+                  style={{ cursor: "pointer" }}
+                >
+                  By Language
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Navbar = () => {
   const [userId, setUserId] = useState(null);
@@ -55,8 +243,8 @@ const Navbar = () => {
     { label: "Studios", to: "/studios" },
     { label: "Search", to: "/advanced-search" },
     { label: "lists", to: `/${userId}/userlists` },
+    { label: "Discover", to: "/ai/search" },
     { label: "sign in", to: "/login" },
-    { label: "Discover ", to: "/ai/search" },
   ];
 
   const dropdownLinks = [
@@ -160,7 +348,6 @@ const Navbar = () => {
           gap: "24px",
         }}
       >
-        {/* Logo */}
         <div
           style={{
             display: "flex",
@@ -191,7 +378,6 @@ const Navbar = () => {
           </span>
         </div>
 
-        {/* Center nav links */}
         <div
           style={{
             display: "flex",
@@ -206,9 +392,9 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
+          <DiscoverNavDropdown />
         </div>
 
-        {/* Right side */}
         <div
           style={{
             display: "flex",
@@ -217,7 +403,6 @@ const Navbar = () => {
             flexShrink: 0,
           }}
         >
-          {/* Search */}
           <div
             style={{
               display: "flex",
@@ -288,7 +473,6 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Login link (when not logged in) */}
           {!userId && (
             <Link
               to="/login"
@@ -317,7 +501,6 @@ const Navbar = () => {
             </Link>
           )}
 
-          {/* User dropdown */}
           {userId && (
             <div ref={dropdownRef} style={{ position: "relative" }}>
               <button
@@ -392,7 +575,6 @@ const Navbar = () => {
                     animation: "fadeDown 0.15s ease",
                   }}
                 >
-                  {/* User header */}
                   <div
                     style={{
                       padding: "12px 20px",
@@ -452,7 +634,6 @@ const Navbar = () => {
                     </div>
                   </div>
 
-                  {/* Links */}
                   <div style={{ padding: "6px 0" }}>
                     {dropdownLinks.map((link) => (
                       <Link
@@ -466,7 +647,6 @@ const Navbar = () => {
                     ))}
                   </div>
 
-                  {/* Divider + extra links */}
                   <div
                     style={{ borderTop: "1px solid #1e2235", padding: "6px 0" }}
                   >
@@ -491,15 +671,11 @@ const Navbar = () => {
                     >
                       Reviews
                     </Link>
-                    <Link
-                      to="/favorite-series"
-                      className="cine-dropdown-item"
-                    >
+                    <Link to="/favorite-series" className="cine-dropdown-item">
                       Favorites
                     </Link>
                   </div>
 
-                  {/* Sign out */}
                   <div
                     style={{ borderTop: "1px solid #1e2235", padding: "6px 0" }}
                   >

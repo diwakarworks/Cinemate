@@ -43,6 +43,42 @@ const MovieDetails = () => {
   const [reviews, setReviews] = useState([]);
   const [movieDetails, setMovieDetails] = useState();
   const navigate = useNavigate();
+  const [languages, setLanguages] = useState([]);
+
+  useEffect(() => {
+    const cached = localStorage.getItem("tmdb_languages");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const isValid =
+        Array.isArray(parsed) &&
+        parsed.length > 50 &&
+        parsed.every((l) => l.iso_639_1 && l.english_name);
+      if (isValid) {
+        setLanguages(parsed);
+        return;
+      }
+    }
+    const fetchLanguages = async () => {
+      try {
+        const res = await axios.get(
+          `https://api.themoviedb.org/3/configuration/languages`,
+          { params: { api_key: apiKey } },
+        );
+        const cleaned = res.data
+          .filter((l) => l.english_name)
+          .map((l) => ({
+            iso_639_1: l.iso_639_1,
+            english_name: l.english_name,
+          }));
+        setLanguages(cleaned);
+        localStorage.setItem("tmdb_languages", JSON.stringify(cleaned));
+        console.log(cleaned,"tmdb languages");
+      } catch (err) {
+        console.error("Failed to fetch languages:", err);
+      }
+    };
+    fetchLanguages();
+  }, []);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -266,6 +302,10 @@ const MovieDetails = () => {
     navigate(`/movie/${id}/gallery`);
   };
 
+  const originalLanguageName =
+  languages.find((l) => l.iso_639_1 === movie?.original_language)
+    ?.english_name || movie?.original_language;
+
   if (!movie) return <p>Loading movie details...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
@@ -308,7 +348,7 @@ const MovieDetails = () => {
           </div>
         )}
 
-        <WatchlistButton movieId={id} onStatusChange={setIsInWatchlist} />  
+        <WatchlistButton movieId={id} onStatusChange={setIsInWatchlist} />
 
         <AddToFavoritesButton
           movieId={movie.id}
@@ -463,6 +503,27 @@ const MovieDetails = () => {
               </div>
             )}
           </div>
+
+          {movie.original_language && (
+            <div className="mt-4">
+              <h4 className="text-gray-400 ml-8 font-semibold mb-2">
+                ORIGINAL LANGUAGE
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                <span className="bg-slate-700 ml-6 text-gray-200 ml-2 text-md font-medium px-2 py-1 mb-4 rounded-full">
+                  {originalLanguageName}
+                </span>
+              </div>
+              <h4 className="text-gray-400 ml-8 font-semibold mb-2">
+                ORIGINAL Title
+              </h4>
+              {(movie.original_title || movie.title) && (
+                <span className="text-white ml-8 text-sm italic">
+                  {movie.original_title || movie.title}
+                </span>
+              )}
+            </div>
+          )}
 
           <hr className="border-gray-700 mt-10 ml-8 mb-14" />
 

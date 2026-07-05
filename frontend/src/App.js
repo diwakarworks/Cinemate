@@ -52,6 +52,9 @@ import AISearch from './pages/AISearch';
 import PeoplePage from './pages/PeoplePage';
 import UserLists from './pages/UserLists';
 import FavoriteSeries from './pages/FavoriteSeries';
+import Countries from './pages/Countries';
+import SeriesCountries from './pages/SeriesCountries';
+
 
 
 
@@ -117,6 +120,9 @@ const App = () => {
         <Route path="/people/:userId" element={<PeoplePage />} />
         <Route path="/:userId/userlists" element={<UserLists />} />
         <Route path="/favorite-series" element={<FavoriteSeries/>} />
+        <Route path="/countries" element={<Countries />} />
+        <Route path="/series/countries" element={<SeriesCountries />} />
+
       </Routes>
     </div>
   );

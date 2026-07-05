@@ -42,6 +42,43 @@ const ShowDetails = () => {
   const [reviews, setReviews] = useState([]);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const navigate = useNavigate();
+  const [languages, setLanguages] = useState([]);
+
+  useEffect(() => {
+    const cached = localStorage.getItem("tmdb_languages");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const isValid =
+        Array.isArray(parsed) &&
+        parsed.length > 50 &&
+        parsed.every((l) => l.iso_639_1 && l.english_name);
+      if (isValid) {
+        setLanguages(parsed);
+        return;
+      }
+    }
+
+    const fetchLanguages = async () => {
+      try {
+        const res = await axios.get(
+          `https://api.themoviedb.org/3/configuration/languages`,
+          { params: { api_key: apiKey } },
+        );
+        const cleaned = res.data
+          .filter((l) => l.english_name)
+          .map((l) => ({
+            iso_639_1: l.iso_639_1,
+            english_name: l.english_name,
+          }));
+        setLanguages(cleaned);
+        localStorage.setItem("tmdb_languages", JSON.stringify(cleaned));
+      } catch (err) {
+        console.error("Failed to fetch languages:", err);
+      }
+    };
+
+    fetchLanguages();
+  }, []);
 
   useEffect(() => {
     const fetchShowDetails = async () => {
@@ -240,6 +277,10 @@ const ShowDetails = () => {
     navigate(`/series/${id}/gallery`);
   };
 
+  const originalLanguageName =
+    languages.find((l) => l.iso_639_1 === show?.original_language)
+      ?.english_name || show?.original_language;
+
   if (!show) return <p>Loading show details...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
@@ -407,6 +448,27 @@ const ShowDetails = () => {
           </div>
 
           <hr className="border-gray-700 mt-10 ml-8 mb-14" />
+
+          {show.original_language && (
+            <div className="mt-4">
+              <h4 className="text-gray-400 ml-8 font-semibold mb-2">
+                ORIGINAL LANGUAGE
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                <span className="bg-slate-700 ml-6 text-gray-200 ml-2 text-md font-medium px-2 py-1 mb-4 rounded-full">
+                  {originalLanguageName}
+                </span>
+              </div>
+              <h4 className="text-gray-400 ml-8 font-semibold mb-2">
+                ORIGINAL TITLE
+              </h4>
+              {(show.original_name || show.name) && (
+                <span className="text-white ml-8 text-sm italic">
+                  {show.original_name || show.name}
+                </span>
+              )}
+            </div>
+          )}
 
           <p className=" text-gray-400 ml-8 font-semibold">CAST</p>
           <div className="flex ml-9 mb-4 space-x-6">
