@@ -35,18 +35,32 @@ const addDiaryEntry = asyncHandler(async (req, res) => {
 
     const { data } = await axios.get(creditsUrl);
 
+  
     let directorId = null;
+    let popularity = 0;
+    let runtime = 0;
 
     if (mediaType === "movie") {
       const director = data.crew.find((person) => person.job === "Director");
       directorId = director ? director.id : null;
+
+      const movieUrl = `https://api.themoviedb.org/3/movie/${mediaId}?api_key=${tmdbApiKey}`;
+      const { data: movieData } = await axios.get(movieUrl);
+      popularity = movieData.popularity || 0;
+      runtime = movieData.runtime || 0;
+      
+
     }
 
     if (mediaType === "tv") {
       const tvUrl = `https://api.themoviedb.org/3/tv/${mediaId}?api_key=${tmdbApiKey}`;
       const { data: tvData } = await axios.get(tvUrl);
       directorId = tvData.created_by?.[0]?.id || null;
+      popularity = tvData.popularity || 0;
+      runtime = tvData.episode_run_time?.[0] || 0;
+
     }
+
     const entry = await DiaryEntry.create({
       user: userId,
       mediaId,
@@ -58,6 +72,8 @@ const addDiaryEntry = asyncHandler(async (req, res) => {
       rating,
       review,
       directorId,
+      popularity,
+      runtime
     });
 
     res.status(201).json(entry);

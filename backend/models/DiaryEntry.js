@@ -11,7 +11,9 @@ const diaryEntrySchema = new mongoose.Schema({
     watchedDate: { type: Date, required: true },
     rating: { type: Number, min: 1, max: 10 },
     review: { type: String },
-    directorId: { type: Number } 
+    directorId: { type: Number },
+    popularity: { type: Number, default: 0 },
+    runtime: { type: Number, default: 0 } 
 });
 
 module.exports = mongoose.model('DiaryEntry', diaryEntrySchema);
