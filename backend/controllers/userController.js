@@ -1,22 +1,20 @@
-const User = require('../models/User');
-const asyncHandler = require('express-async-handler');
-const axios = require('axios');
-const Movie = require('../models/Movie');
-const Series = require('../models/Series');
-const mongoose = require('mongoose');
-
-
+const User = require("../models/User");
+const asyncHandler = require("express-async-handler");
+const axios = require("axios");
+const Movie = require("../models/Movie");
+const Series = require("../models/Series");
+const mongoose = require("mongoose");
 
 const getUserStats = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
-    try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-        res.json(user.stats);
-    } catch (error) {
-        console.error(`Error ${error.message}`)
-        res.status(500).json({ message: 'Failed to get User Stats' });
-    }
+  const userId = req.user._id;
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user.stats);
+  } catch (error) {
+    console.error(`Error ${error.message}`);
+    res.status(500).json({ message: "Failed to get User Stats" });
+  }
 });
 
 // const addToWatchlist = asyncHandler(async (req, res) => {
@@ -27,7 +25,6 @@ const getUserStats = asyncHandler(async (req, res) => {
 //         const user = await User.findById(userId);
 //         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        
 //         if (!Array.isArray(user.watchlist)) {
 //             user.watchlist = [];
 //         }
@@ -51,462 +48,625 @@ const getUserStats = asyncHandler(async (req, res) => {
 //     }
 // });
 
-
-
 const addToWatchlist = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
-    const { movieId, seriesId, type } = req.body; 
+  const userId = req.user._id;
+  const { movieId, seriesId, type } = req.body;
 
-    try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        if (type === 'movie') {
-            if (!Array.isArray(user.watchlist)) user.watchlist = [];
+    if (type === "movie") {
+      if (!Array.isArray(user.watchlist)) user.watchlist = [];
 
-            const movieIdStr = movieId?.toString();
-            if (!movieIdStr) return res.status(400).json({ message: 'Invalid movieId' });
+      const movieIdStr = movieId?.toString();
+      if (!movieIdStr)
+        return res.status(400).json({ message: "Invalid movieId" });
 
-            if (!user.watchlist.includes(movieIdStr)) {
-                user.watchlist.push(movieIdStr);
-                await user.save();
-                return res.status(201).json({ message: 'Movie added to watchlist' });
-            } else {
-                return res.status(200).json({ message: 'Movie already in watchlist' });
-            }
+      if (!user.watchlist.includes(movieIdStr)) {
+        user.watchlist.push(movieIdStr);
+        await user.save();
+        return res.status(201).json({ message: "Movie added to watchlist" });
+      } else {
+        return res.status(200).json({ message: "Movie already in watchlist" });
+      }
+    } else if (type === "series") {
+      if (!Array.isArray(user.seriesWatchlist)) user.seriesWatchlist = [];
 
-        } else if (type === 'series') {
-            if (!Array.isArray(user.seriesWatchlist)) user.seriesWatchlist = [];
+      const seriesIdStr = seriesId?.toString();
+      if (!seriesIdStr)
+        return res.status(400).json({ message: "Invalid seriesId" });
 
-            const seriesIdStr = seriesId?.toString();
-            if (!seriesIdStr) return res.status(400).json({ message: 'Invalid seriesId' });
-
-            if (!user.seriesWatchlist.includes(seriesIdStr)) {
-                user.seriesWatchlist.push(seriesIdStr);
-                await user.save();
-                return res.status(201).json({ message: 'Series added to watchlist' });
-            } else {
-                return res.status(200).json({ message: 'Series already in watchlist' });
-            }
-
-        } else {
-            return res.status(400).json({ message: 'Invalid type. Use "movie" or "series"' });
-        }
-
-    } catch (error) {
-        console.error(`Error: ${error.message}`);
-        res.status(500).json({ message: 'Watchlist error' });
+      if (!user.seriesWatchlist.includes(seriesIdStr)) {
+        user.seriesWatchlist.push(seriesIdStr);
+        await user.save();
+        return res.status(201).json({ message: "Series added to watchlist" });
+      } else {
+        return res.status(200).json({ message: "Series already in watchlist" });
+      }
+    } else {
+      return res
+        .status(400)
+        .json({ message: 'Invalid type. Use "movie" or "series"' });
     }
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: "Watchlist error" });
+  }
 });
 
 const updateStats = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
-    const { totalMoviesWatched, favoriteGenres } = req.body;
+  const userId = req.user._id;
+  const { totalMoviesWatched, favoriteGenres } = req.body;
 
-    try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        if (!user.stats) {
-            user.stats = { totalMoviesWatched: 0, favoriteGenres: new Map() };
-        } else if (!user.stats.favoriteGenres) {
-            user.stats.favoriteGenres = new Map();
-        }
-
-        user.stats.totalMoviesWatched += totalMoviesWatched;
-
-        for (const genre in favoriteGenres) {
-            const currentCount = user.stats.favoriteGenres.get(genre) || 0;
-            user.stats.favoriteGenres.set(genre, currentCount + favoriteGenres[genre]);
-        }
-
-        await user.save();
-        res.status(200).json({ message: 'User stats updated' });
-    } catch (error) {
-        console.error(`Error: ${error.message}`);
-        res.status(500).json({ message: 'User stats error' });
+    if (!user.stats) {
+      user.stats = { totalMoviesWatched: 0, favoriteGenres: new Map() };
+    } else if (!user.stats.favoriteGenres) {
+      user.stats.favoriteGenres = new Map();
     }
+
+    user.stats.totalMoviesWatched += totalMoviesWatched;
+
+    for (const genre in favoriteGenres) {
+      const currentCount = user.stats.favoriteGenres.get(genre) || 0;
+      user.stats.favoriteGenres.set(
+        genre,
+        currentCount + favoriteGenres[genre],
+      );
+    }
+
+    await user.save();
+    res.status(200).json({ message: "User stats updated" });
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: "User stats error" });
+  }
 });
 
 const deleteStats = asyncHandler(async (req, res) => {
-    const userId = req.params.id;
+  const userId = req.params.id;
 
-    try {
-        // Find and update the user by unsetting the 'stats' field
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { $unset: { stats: "" } },
-            { new: true }
-        );
+  try {
+    // Find and update the user by unsetting the 'stats' field
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $unset: { stats: "" } },
+      { new: true },
+    );
 
-        if (!updatedUser) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.status(200).json({ message: "User stats deleted successfully" });
-    } catch (error) {
-        console.error(`Error deleting stats: ${error.message}`);
-        res.status(500).json({ message: "Failed to delete user stats" });
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    res.status(200).json({ message: "User stats deleted successfully" });
+  } catch (error) {
+    console.error(`Error deleting stats: ${error.message}`);
+    res.status(500).json({ message: "Failed to delete user stats" });
+  }
 });
 
-// const getWatchlist = asyncHandler(async (req, res) => {
-
-//     const userId = req.user._id;
-
-//     try {
-//         const user = await User.findById(userId).select('watchlist').lean();
-//         if (!user) return res.status(404).json({ message: 'User not found' });
-
-//         const fetchMovieDetails = async (movieId, retries = 3) => {
-//             try {
-//                 const response = await axios.get(`https://api.themoviedb.org/3/movie/${movieId}`, {
-//                     params: { api_key: process.env.TMDB_API_KEY },
-//                     timeout: 5000, // Set timeout to 5s
-//                     httpAgent: new (require('http').Agent)({ keepAlive: true }), // Keep connection alive
-//                     httpsAgent: new (require('https').Agent)({ keepAlive: true }),
-//                 });
-//                 return response.data;
-//             } catch (error) {
-//                 if (retries > 0) {
-//                     console.warn(`Retrying fetch for movie ${movieId}, attempts left: ${retries}`);
-//                     await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay before retry
-//                     return fetchMovieDetails(movieId, retries - 1);
-//                 }
-//                 console.error(`Failed to fetch movie ${movieId}:`, error.message);
-//                 return null; // Skip movie on persistent failure
-//             }
-//         };
-
-//         const movieDetails = await Promise.all(user.watchlist.map(movieId => fetchMovieDetails(movieId)));
-
-//         res.status(200).json({ watchlist: movieDetails.filter(movie => movie !== null) }); // Remove null responses
-//     } catch (error) {
-//         console.error(`Error: ${error.message}`);
-//         res.status(500).json({ message: 'Failed to retrieve watchlist' });
-//     }
-// });
-
 const getWatchlist = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
+  const userId = req.user._id;
+  try {
+    const user = await User.findById(userId).select("watchlist seriesWatchlist").lean();
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    try {
-        const user = await User.findById(userId).select('watchlist seriesWatchlist').lean();
-        if (!user) return res.status(404).json({ message: 'User not found' });
+    const agentOptions = {
+      httpAgent: new (require("http").Agent)({ keepAlive: true }),
+      httpsAgent: new (require("https").Agent)({ keepAlive: true }),
+    };
 
-        const agentOptions = {
-            httpAgent: new (require('http').Agent)({ keepAlive: true }),
-            httpsAgent: new (require('https').Agent)({ keepAlive: true }),
-        };
-
-        // Fetch movie details from TMDB
-        const fetchMovieDetails = async (movieId, retries = 3) => {
-            try {
-                const response = await axios.get(`https://api.themoviedb.org/3/movie/${movieId}`, {
-                    params: { api_key: process.env.TMDB_API_KEY },
-                    timeout: 5000,
-                    ...agentOptions,
-                });
-                return { ...response.data, mediaType: 'movie' }; // tag it
-            } catch (error) {
-                if (retries > 0) {
-                    console.warn(`Retrying fetch for movie ${movieId}, attempts left: ${retries}`);
-                    await new Promise((resolve) => setTimeout(resolve, 500));
-                    return fetchMovieDetails(movieId, retries - 1);
-                }
-                console.error(`Failed to fetch movie ${movieId}:`, error.message);
-                return null;
-            }
-        };
-
-        // Fetch series details from TMDB
-        const fetchSeriesDetails = async (seriesId, retries = 3) => {
-            try {
-                const response = await axios.get(`https://api.themoviedb.org/3/tv/${seriesId}`, {
-                    params: { api_key: process.env.TMDB_API_KEY },
-                    timeout: 5000,
-                    ...agentOptions,
-                });
-                return { ...response.data, mediaType: 'series' }; // tag it
-            } catch (error) {
-                if (retries > 0) {
-                    console.warn(`Retrying fetch for series ${seriesId}, attempts left: ${retries}`);
-                    await new Promise((resolve) => setTimeout(resolve, 500));
-                    return fetchSeriesDetails(seriesId, retries - 1);
-                }
-                console.error(`Failed to fetch series ${seriesId}:`, error.message);
-                return null;
-            }
-        };
-
-        // Fetch both in parallel
-        const [movieDetails, seriesDetails] = await Promise.all([
-            Promise.all((user.watchlist || []).map(id => fetchMovieDetails(id))),
-            Promise.all((user.seriesWatchlist || []).map(id => fetchSeriesDetails(id))),
-        ]);
-
-        res.status(200).json({
-            watchlist: movieDetails.filter(Boolean),
-            seriesWatchlist: seriesDetails.filter(Boolean),
+    const fetchMovieDetails = async (movieId) => {
+      try {
+        const response = await axios.get(`https://api.themoviedb.org/3/movie/${movieId}`, {
+          params: { api_key: process.env.TMDB_API_KEY },
+          timeout: 5000,
+          ...agentOptions,
         });
+        return { ...response.data, mediaType: "movie" };
+      } catch (error) {
+        console.error(`Failed to fetch movie ${movieId}:`, error.message);
+        return null;
+      }
+    };
 
-    } catch (error) {
-        console.error(`Error: ${error.message}`);
-        res.status(500).json({ message: 'Failed to retrieve watchlist' });
-    }
+    const fetchSeriesDetails = async (seriesId) => {
+      try {
+        const response = await axios.get(`https://api.themoviedb.org/3/tv/${seriesId}`, {
+          params: { api_key: process.env.TMDB_API_KEY },
+          timeout: 5000,
+          ...agentOptions,
+        });
+        return { ...response.data, mediaType: "series" };
+      } catch (error) {
+        console.error(`Failed to fetch series ${seriesId}:`, error.message);
+        return null;
+      }
+    };
+
+    const [movieDetails, seriesDetails] = await Promise.all([
+      Promise.all((user.watchlist || []).map((id) => fetchMovieDetails(id))),
+      Promise.all((user.seriesWatchlist || []).map((id) => fetchSeriesDetails(id))),
+    ]);
+
+    res.status(200).json({
+      watchlist: movieDetails.filter(Boolean),
+      seriesWatchlist: seriesDetails.filter(Boolean),
+    });
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: "Failed to retrieve watchlist" });
+  }
 });
 
 const deleteWatchlistForSpecificMovie = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
-    const { movieId, seriesId, type } = req.body;  // match your add controller
+  const userId = req.user._id;
+  const { movieId, seriesId, type } = req.body;
 
-    try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        if (type === 'series') {
-            const itemIndex = user.seriesWatchlist.indexOf(seriesId.toString());
-            if (itemIndex === -1) {
-                return res.status(404).json({ message: 'Series not found in watchlist' });
-            }
-            user.seriesWatchlist.splice(itemIndex, 1);
-        } else {
-            const itemIndex = user.watchlist.indexOf(movieId.toString());
-            if (itemIndex === -1) {
-                return res.status(404).json({ message: 'Movie not found in watchlist' });
-            }
-            user.watchlist.splice(itemIndex, 1);
-        }
-
-        await user.save();
-        res.status(200).json({ message: `${type} removed from watchlist` });
-
-    } catch (error) {
-        console.error(`Error: ${error.message}`);
-        res.status(500).json({ message: 'Error removing from watchlist' });
+    if (type === "series") {
+      const itemIndex = user.seriesWatchlist.indexOf(seriesId.toString());
+      if (itemIndex === -1) {
+        return res
+          .status(404)
+          .json({ message: "Series not found in watchlist" });
+      }
+      user.seriesWatchlist.splice(itemIndex, 1);
+    } else {
+      const itemIndex = user.watchlist.indexOf(movieId.toString());
+      if (itemIndex === -1) {
+        return res
+          .status(404)
+          .json({ message: "Movie not found in watchlist" });
+      }
+      user.watchlist.splice(itemIndex, 1);
     }
+
+    await user.save();
+    res.status(200).json({ message: `${type} removed from watchlist` });
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: "Error removing from watchlist" });
+  }
 });
 
+const exportAllWatchlists = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  try {
+    const user = await User.findById(userId).select('watchlist seriesWatchlist').lean();
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const fetchDetails = async (id, isSeries) => {
+      try {
+        const url = `https://api.themoviedb.org/3/${isSeries ? 'tv' : 'movie'}/${id}`;
+        const res = await axios.get(url, { params: { api_key: process.env.TMDB_API_KEY } });
+        return res.data;
+      } catch {
+        return null;
+      }
+    };
+
+    const movies = await Promise.all((user.watchlist || []).map(id => fetchDetails(id, false)));
+    const series = await Promise.all((user.seriesWatchlist || []).map(id => fetchDetails(id, true)));
+
+    const header = "type,title,year,tmdbId";
+    const movieRows = movies.filter(Boolean).map(
+      m => `movie,"${m.title}",${m.release_date?.slice(0,4) || ""},${m.id}`
+    );
+    const seriesRows = series.filter(Boolean).map(
+      s => `series,"${s.name}",${s.first_air_date?.slice(0,4) || ""},${s.id}`
+    );
+    const csv = [header, ...movieRows, ...seriesRows].join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", 'attachment; filename="watchlist.csv"');
+    res.send(csv);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: "Failed to export watchlist" });
+  }
+});
+
+const importAllWatchlists = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const csvText = req.file.buffer.toString("utf-8");
+    const { data: rows } = Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true,
+    });
+    const results = { imported: 0, skipped: 0, unmatched: [] };
+
+    for (const row of rows) {
+      const type = (row.type || "movie").toLowerCase();
+      const title = row.title || row.Title;
+      const year = row.year || row.Year;
+      if (!title) continue;
+
+      const searchUrl =
+        type === "series"
+          ? "https://api.themoviedb.org/3/search/tv"
+          : "https://api.themoviedb.org/3/search/movie";
+      const searchParams =
+        type === "series"
+          ? {
+              api_key: process.env.TMDB_API_KEY,
+              query: title,
+              first_air_date_year: year,
+            }
+          : { api_key: process.env.TMDB_API_KEY, query: title, year };
+
+      try {
+        const searchRes = await axios.get(searchUrl, { params: searchParams });
+        const match = searchRes.data.results[0];
+        if (!match) {
+          results.unmatched.push(title);
+          continue;
+        }
+
+        const tmdbId = String(match.id);
+
+        if (type === "series") {
+          let series = await Series.findOne({ tmdbId });
+          if (!series) {
+            series = await Series.create({
+              tmdbId,
+              title: match.name,
+              year: match.first_air_date
+                ? Number(match.first_air_date.slice(0, 4))
+                : undefined,
+              poster_path: match.poster_path,
+              vote_average: match.vote_average,
+            });
+          }
+          if (user.seriesWatchlist.includes(tmdbId)) {
+            results.skipped++;
+            continue;
+          }
+          user.seriesWatchlist.push(tmdbId);
+        } else {
+          let movie = await Movie.findOne({ tmdbId });
+          if (!movie) {
+            movie = await Movie.create({
+              tmdbId,
+              title: match.title,
+              year: match.release_date
+                ? Number(match.release_date.slice(0, 4))
+                : undefined,
+              poster_path: match.poster_path,
+              vote_average: match.vote_average,
+            });
+          }
+          if (user.watchlist.includes(tmdbId)) {
+            results.skipped++;
+            continue;
+          }
+          user.watchlist.push(tmdbId);
+        }
+
+        results.imported++;
+      } catch (rowError) {
+        console.error(`Failed to process row "${title}": ${rowError.message}`);
+        results.unmatched.push(title);
+      }
+    }
+
+    await user.save();
+    res.json(results);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: "Failed to import watchlist" });
+  }
+});
+
+// Clear both movies and series watchlist
+const clearWatchlist = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { watchlist: [], seriesWatchlist: [] },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json({ message: 'Watchlist cleared' });
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to clear watchlist' });
+  }
+});
+
+// Toggle watchlist visibility
+const setWatchlistVisibility = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { isPrivate } = req.body;
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { isWatchlistPrivate: isPrivate },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json({ message: 'Visibility updated', isWatchlistPrivate: user.isWatchlistPrivate });
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: 'Failed to update visibility' });
+  }
+});
 
 const addToFavorites = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
-    const { movieId, year, title, poster_path } = req.body; 
+  const userId = req.user._id;
+  const { movieId, year, title, poster_path } = req.body;
 
-    try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Use findOneAndUpdate with upsert (creates if doesn't exist)
-        const movie = await Movie.findOneAndUpdate(
-            { tmdbId: movieId },
-            { 
-                tmdbId: movieId, 
-                title, 
-                year, 
-                poster_path 
-            },
-            { 
-                upsert: true,  // Create if doesn't exist
-                new: true,     // Return the updated/created document
-                setDefaultsOnInsert: true
-            }
-        );
+    // Use findOneAndUpdate with upsert (creates if doesn't exist)
+    const movie = await Movie.findOneAndUpdate(
+      { tmdbId: movieId },
+      {
+        tmdbId: movieId,
+        title,
+        year,
+        poster_path,
+      },
+      {
+        upsert: true, // Create if doesn't exist
+        new: true, // Return the updated/created document
+        setDefaultsOnInsert: true,
+      },
+    );
 
-        console.log('✅ Movie:', movie.title);
+    console.log("✅ Movie:", movie.title);
 
-        // Check if already in favorites
-        const isAlreadyFavorite = user.favorites.some(
-            fav => fav.toString() === movie._id.toString()
-        );
+    // Check if already in favorites
+    const isAlreadyFavorite = user.favorites.some(
+      (fav) => fav.toString() === movie._id.toString(),
+    );
 
-        if (isAlreadyFavorite) {
-            return res.status(400).json({ message: 'Movie is already in favorites' });
-        }
-
-        // Add to favorites
-        user.favorites.push(movie._id);
-        await user.save();
-
-        res.status(201).json({ 
-            message: 'Movie added to favorites',
-            movie: {
-                _id: movie._id,
-                tmdbId: movie.tmdbId,
-                title: movie.title
-            }
-        });
-
-    } catch (error) {
-        console.error(`Error: ${error.message}`);
-        res.status(500).json({ message: error.message });
+    if (isAlreadyFavorite) {
+      return res.status(400).json({ message: "Movie is already in favorites" });
     }
+
+    // Add to favorites
+    user.favorites.push(movie._id);
+    await user.save();
+
+    res.status(201).json({
+      message: "Movie added to favorites",
+      movie: {
+        _id: movie._id,
+        tmdbId: movie.tmdbId,
+        title: movie.title,
+      },
+    });
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: error.message });
+  }
 });
+
+
 
 const removeFromFavorites = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
-    const { movieId } = req.body;  
+  const userId = req.user._id;
+  const { movieId } = req.body;
 
-    try {
-        const user = await User.findById(userId).populate('favorites');
-        if (!user) return res.status(404).json({ message: 'User not found' });
+  try {
+    const user = await User.findById(userId).populate("favorites");
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        console.log('Current favorites:', user.favorites); 
-        console.log('Trying to remove movieId:', movieId);
+    console.log("Current favorites:", user.favorites);
+    console.log("Trying to remove movieId:", movieId);
 
-        // Find the movie in the database by tmdbId
-        const movie = await Movie.findOne({ tmdbId: movieId });
-        
-        if (!movie) {
-            return res.status(404).json({ message: 'Movie not found in database' });
-        }
+    // Find the movie in the database by tmdbId
+    const movie = await Movie.findOne({ tmdbId: movieId });
 
-        // Check if the movie's _id is in user.favorites
-        const index = user.favorites.findIndex(
-            fav => fav._id.toString() === movie._id.toString()
-        );
-
-        if (index > -1) {
-            user.favorites.splice(index, 1); 
-            await user.save(); 
-            return res.status(200).json({ 
-                message: 'Movie removed from favorites',
-                favorites: user.favorites 
-            });
-        } else {
-            return res.status(400).json({ message: 'Movie is not in favorites' });
-        }
-    } catch (error) {
-        console.error(`Error: ${error.message}`);
-        res.status(500).json({ message: 'Failed to remove movie from favorites' });
+    if (!movie) {
+      return res.status(404).json({ message: "Movie not found in database" });
     }
+
+    // Check if the movie's _id is in user.favorites
+    const index = user.favorites.findIndex(
+      (fav) => fav._id.toString() === movie._id.toString(),
+    );
+
+    if (index > -1) {
+      user.favorites.splice(index, 1);
+      await user.save();
+      return res.status(200).json({
+        message: "Movie removed from favorites",
+        favorites: user.favorites,
+      });
+    } else {
+      return res.status(400).json({ message: "Movie is not in favorites" });
+    }
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: "Failed to remove movie from favorites" });
+  }
 });
-
-
 
 const getFavorites = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
+  const userId = req.user._id;
 
-    try {
-        
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        
-        console.log('User favorites:', user.favorites);
+    console.log("User favorites:", user.favorites);
 
-  
-        const movies = await Movie.find({ _id: { $in: user.favorites } });
+    const movies = await Movie.find({ _id: { $in: user.favorites } });
 
-        
-        if (!movies.length) {
-            return res.status(200).json({ message: 'No favorites found' });
-        }
-
-     
-        const favoriteMovies = movies.map(movie => ({
-            id: movie._id, 
-            title: movie.title,
-            year: movie.year,
-            poster_path : movie.poster_path,
-        }));
-
-        
-        res.status(200).json(favoriteMovies);
-    } catch (error) {
-        console.error(`Error: ${error.message}`);
-        res.status(500).json({ message: 'Failed to fetch favorites' });
+    if (!movies.length) {
+      return res.status(200).json({ message: "No favorites found" });
     }
 
+    const favoriteMovies = movies.map((movie) => ({
+      id: movie._id,
+      title: movie.title,
+      year: movie.year,
+      poster_path: movie.poster_path,
+    }));
+
+    res.status(200).json(favoriteMovies);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    res.status(500).json({ message: "Failed to fetch favorites" });
+  }
 });
 
-
 const getFavoriteSeries = asyncHandler(async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id).populate('favoriteSeries');
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        if (!user.favoriteSeries || user.favoriteSeries.length === 0) {
-            return res.status(200).json({ message: "No favorite series found", favoriteSeries: [] });
-        }
-        res.status(200).json(user.favoriteSeries);
-    } catch (error) {
-        console.error(`Error fetching favorite series: ${error.message}`, error);
-        res.status(500).json({ message: "Failed to fetch favorite series", error: error.message });
+  try {
+    const user = await User.findById(req.user._id).populate("favoriteSeries");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+    if (!user.favoriteSeries || user.favoriteSeries.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No favorite series found", favoriteSeries: [] });
+    }
+    res.status(200).json(user.favoriteSeries);
+  } catch (error) {
+    console.error(`Error fetching favorite series: ${error.message}`, error);
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch favorite series",
+        error: error.message,
+      });
+  }
 });
 
 const addFavoriteSeries = asyncHandler(async (req, res) => {
-    try {
-        const { tmdbId, title, year, rating, plot, poster_path, vote_average, genre_ids, cast, seasons, episodes } = req.body;
+  try {
+    const {
+      tmdbId,
+      title,
+      year,
+      rating,
+      plot,
+      poster_path,
+      vote_average,
+      genre_ids,
+      cast,
+      seasons,
+      episodes,
+    } = req.body;
 
-        if (!tmdbId || !title || !poster_path) {
-            return res.status(400).json({ message: "tmdbId, title and poster_path are required" });
-        }
-
-        let series = await Series.findOne({ tmdbId });
-        if (!series) {
-            series = await Series.create({
-                tmdbId, title, year, rating, plot, poster_path,
-                vote_average, genre_ids, cast, seasons, episodes
-            });
-        }
-
-        const alreadyFavorited = await User.exists({
-            _id: req.user._id,
-            favoriteSeries: series._id
-        });
-        if (alreadyFavorited) {
-            return res.status(409).json({ message: "Already in favorites" });
-        }
-
-        const user = await User.findByIdAndUpdate(
-            req.user._id,
-            { $push: { favoriteSeries: series._id } },
-            { new: true }
-        ).populate('favoriteSeries');
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.status(201).json(user.favoriteSeries);
-    } catch (error) {
-        console.error(`Error adding favorite series: ${error.message}`, error);
-        res.status(500).json({ message: "Failed to add favorite series", error: error.message });
+    if (!tmdbId || !title || !poster_path) {
+      return res
+        .status(400)
+        .json({ message: "tmdbId, title and poster_path are required" });
     }
+
+    let series = await Series.findOne({ tmdbId });
+    if (!series) {
+      series = await Series.create({
+        tmdbId,
+        title,
+        year,
+        rating,
+        plot,
+        poster_path,
+        vote_average,
+        genre_ids,
+        cast,
+        seasons,
+        episodes,
+      });
+    }
+
+    const alreadyFavorited = await User.exists({
+      _id: req.user._id,
+      favoriteSeries: series._id,
+    });
+    if (alreadyFavorited) {
+      return res.status(409).json({ message: "Already in favorites" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $push: { favoriteSeries: series._id } },
+      { new: true },
+    ).populate("favoriteSeries");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(201).json(user.favoriteSeries);
+  } catch (error) {
+    console.error(`Error adding favorite series: ${error.message}`, error);
+    res
+      .status(500)
+      .json({ message: "Failed to add favorite series", error: error.message });
+  }
 });
 
 const removeFavoriteSeries = asyncHandler(async (req, res) => {
-    try {
-        const { tmdbId } = req.params;
+  try {
+    const { tmdbId } = req.params;
 
-        const series = await Series.findOne({ tmdbId });
-        if (!series) {
-            return res.status(404).json({ message: "Series not found" });
-        }
-
-        const user = await User.findByIdAndUpdate(
-            req.user._id,
-            { $pull: { favoriteSeries: series._id } },
-            { new: true }
-        ).populate('favoriteSeries');
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.status(200).json({
-            message: "Successfully deleted",
-            favoriteSeries: user.favoriteSeries
-        });
-    } catch (error) {
-        console.error(`Error removing favorite series: ${error.message}`, error);
-        res.status(500).json({ message: "Failed to remove favorite series", error: error.message });
+    const series = await Series.findOne({ tmdbId });
+    if (!series) {
+      return res.status(404).json({ message: "Series not found" });
     }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $pull: { favoriteSeries: series._id } },
+      { new: true },
+    ).populate("favoriteSeries");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "Successfully deleted",
+      favoriteSeries: user.favoriteSeries,
+    });
+  } catch (error) {
+    console.error(`Error removing favorite series: ${error.message}`, error);
+    res
+      .status(500)
+      .json({
+        message: "Failed to remove favorite series",
+        error: error.message,
+      });
+  }
 });
 
-
-
-
-module.exports = { getUserStats, addToWatchlist, updateStats,deleteStats, getWatchlist,addToFavorites,deleteWatchlistForSpecificMovie,removeFromFavorites,getFavorites,getFavoriteSeries,addFavoriteSeries,removeFavoriteSeries };
+module.exports = {
+  getUserStats,
+  addToWatchlist,
+  updateStats,
+  deleteStats,
+  getWatchlist,
+  addToFavorites,
+  deleteWatchlistForSpecificMovie,
+  removeFromFavorites,
+  getFavorites,
+  getFavoriteSeries,
+  addFavoriteSeries,
+  removeFavoriteSeries,
+  importAllWatchlists,
+  exportAllWatchlists,
+  clearWatchlist,
+  setWatchlistVisibility,
+};

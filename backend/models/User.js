@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
         totalMoviesWatched: { type: Number, default: 0 },
         favoriteGenres: { type: Map, of: Number },
     },
+    isWatchlistPrivate: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model('User', userSchema);
