@@ -4,6 +4,7 @@ const axios = require("axios");
 const Movie = require("../models/Movie");
 const Series = require("../models/Series");
 const mongoose = require("mongoose");
+const Papa = require("papaparse");
 
 const getUserStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
