@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { BiArrowBack, BiDotsVerticalRounded } from "react-icons/bi";
 
-const API_URL = "https://cinemate-6k9l.onrender.com"; 
+const API_URL = "https://cinemate-6k9l.onrender.com"; // Replace with your backend URL
 
 const Watchlist = () => {
   const { userId } = useParams();
