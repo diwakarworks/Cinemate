@@ -253,6 +253,7 @@ const Navbar = () => {
     { label: "Diary", to: userId ? `/diary/${userId}` : "/diary" },
     { label: "Watchlist", to: "/watchlist" },
     { label: "Stats", to: "/stats" },
+    
   ];
 
   return (
@@ -673,6 +674,13 @@ const Navbar = () => {
                     </Link>
                     <Link to="/favorite-series" className="cine-dropdown-item">
                       Favorites
+                    </Link>
+                    <Link
+                      to={`/${userId}/suggestions`}
+                      className="cine-dropdown-item"
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      Suggestions
                     </Link>
                   </div>
 

@@ -54,6 +54,7 @@ import UserLists from './pages/UserLists';
 import FavoriteSeries from './pages/FavoriteSeries';
 import Countries from './pages/Countries';
 import SeriesCountries from './pages/SeriesCountries';
+import Suggestions from './pages/Suggestions';
 
 
 
@@ -122,6 +123,7 @@ const App = () => {
         <Route path="/favorite-series" element={<FavoriteSeries/>} />
         <Route path="/countries" element={<Countries />} />
         <Route path="/series/countries" element={<SeriesCountries />} />
+        <Route path="/:userId/suggestions" element={<Suggestions />} />
 
       </Routes>
     </div>
