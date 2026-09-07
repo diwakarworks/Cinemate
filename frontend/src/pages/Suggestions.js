@@ -12,7 +12,6 @@ const RecommendationsPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-
   useEffect(() => {
     if (!userId) return;
 
@@ -40,7 +39,7 @@ const RecommendationsPage = () => {
 
   const handleHome = () => {
     navigate("/");
-  }
+  };
 
   if (loading) {
     return (
@@ -86,14 +85,20 @@ const RecommendationsPage = () => {
         onClick={handleHome}
       />
 
-      <h1 className="text-3xl font-bold text-white -mt-10 ml-20 mb-8">Suggestions</h1>
-      <hr className="border-gray-700 mt-10 mb-10" />p
+      <h1 className="text-3xl font-bold text-white -mt-10 ml-20 mb-8">
+        Suggestions
+      </h1>
+      <hr className="border-gray-700 mt-10 mb-10" />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {recommendations.map((movie) => (
           <Link
-            to={`/movie/${movie.tmdbId || movie.id}`}
-            key={movie.id || movie.tmdbId}
+            to={
+              movie.mediaType === "tv"
+                ? `/show/${movie.id}`
+                : `/movie/${movie.id}`
+            }
+            key={`${movie.mediaType}-${movie.id}`}
             className="transition-transform transform hover:scale-105 hover:shadow-lg hover:brightness-110 duration-300"
           >
             <img
