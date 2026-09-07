@@ -1,7 +1,7 @@
+require('dotenv').config();
 const cors = require('cors');
 const express = require('express');
 const connectDB  = require('./config/db');
-const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const reviewRoutes = require('./routes/ReviewRoutes');
@@ -12,7 +12,7 @@ const listRoutes = require('./routes/listsRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const peopleRoutes = require('./routes/peopleRoutes');
  
-dotenv.config();
+
 connectDB();
 const app = express();
 

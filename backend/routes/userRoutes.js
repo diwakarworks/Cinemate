@@ -1,5 +1,5 @@
 const express = require('express');
-const { getUserStats, addToWatchlist, getWatchlist,deleteWatchlistForSpecificMovie,updateStats,deleteStats,addToFavorites, removeFromFavorites, getFavorites,addFavoriteSeries,getFavoriteSeries,removeFavoriteSeries,importAllWatchlists, exportAllWatchlists, clearWatchlist,setWatchlistVisibility } = require('../controllers/userController');
+const { getUserStats, addToWatchlist, getWatchlist,deleteWatchlistForSpecificMovie,updateStats,deleteStats,addToFavorites, removeFromFavorites, getFavorites,addFavoriteSeries,getFavoriteSeries,removeFavoriteSeries,importAllWatchlists, exportAllWatchlists, clearWatchlist,setWatchlistVisibility,getRecommendations,getTasteProfile } = require('../controllers/userController');
 const {protect} = require('../middleware/authMiddleware');
 const router = express.Router();
 const multer = require('multer');
@@ -21,7 +21,8 @@ router.get('/watchlist/export-all', protect, exportAllWatchlists);
 router.post('/watchlist/import-all', protect, upload.single('file'), importAllWatchlists);
 router.delete('/watchlist/clear', protect, clearWatchlist);
 router.patch('/watchlist/visibility', protect, setWatchlistVisibility);
-
+router.get('/:id/recommendations', protect, getRecommendations);
+router.get('/:id/recommendations/taste-profile', protect, getTasteProfile);
 
 
 module.exports = router;

@@ -5,6 +5,11 @@ const Movie = require("../models/Movie");
 const Series = require("../models/Series");
 const mongoose = require("mongoose");
 const Papa = require("papaparse");
+const Review = require("../models/Review");
+const DiaryEntry = require("../models/DiaryEntry");
+
+const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const getUserStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -153,7 +158,9 @@ const deleteStats = asyncHandler(async (req, res) => {
 const getWatchlist = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   try {
-    const user = await User.findById(userId).select("watchlist seriesWatchlist").lean();
+    const user = await User.findById(userId)
+      .select("watchlist seriesWatchlist")
+      .lean();
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const agentOptions = {
@@ -163,11 +170,14 @@ const getWatchlist = asyncHandler(async (req, res) => {
 
     const fetchMovieDetails = async (movieId) => {
       try {
-        const response = await axios.get(`https://api.themoviedb.org/3/movie/${movieId}`, {
-          params: { api_key: process.env.TMDB_API_KEY },
-          timeout: 5000,
-          ...agentOptions,
-        });
+        const response = await axios.get(
+          `https://api.themoviedb.org/3/movie/${movieId}`,
+          {
+            params: { api_key: process.env.TMDB_API_KEY },
+            timeout: 5000,
+            ...agentOptions,
+          },
+        );
         return { ...response.data, mediaType: "movie" };
       } catch (error) {
         console.error(`Failed to fetch movie ${movieId}:`, error.message);
@@ -177,11 +187,14 @@ const getWatchlist = asyncHandler(async (req, res) => {
 
     const fetchSeriesDetails = async (seriesId) => {
       try {
-        const response = await axios.get(`https://api.themoviedb.org/3/tv/${seriesId}`, {
-          params: { api_key: process.env.TMDB_API_KEY },
-          timeout: 5000,
-          ...agentOptions,
-        });
+        const response = await axios.get(
+          `https://api.themoviedb.org/3/tv/${seriesId}`,
+          {
+            params: { api_key: process.env.TMDB_API_KEY },
+            timeout: 5000,
+            ...agentOptions,
+          },
+        );
         return { ...response.data, mediaType: "series" };
       } catch (error) {
         console.error(`Failed to fetch series ${seriesId}:`, error.message);
@@ -191,7 +204,9 @@ const getWatchlist = asyncHandler(async (req, res) => {
 
     const [movieDetails, seriesDetails] = await Promise.all([
       Promise.all((user.watchlist || []).map((id) => fetchMovieDetails(id))),
-      Promise.all((user.seriesWatchlist || []).map((id) => fetchSeriesDetails(id))),
+      Promise.all(
+        (user.seriesWatchlist || []).map((id) => fetchSeriesDetails(id)),
+      ),
     ]);
 
     res.status(200).json({
@@ -241,33 +256,50 @@ const deleteWatchlistForSpecificMovie = asyncHandler(async (req, res) => {
 const exportAllWatchlists = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   try {
-    const user = await User.findById(userId).select('watchlist seriesWatchlist').lean();
+    const user = await User.findById(userId)
+      .select("watchlist seriesWatchlist")
+      .lean();
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const fetchDetails = async (id, isSeries) => {
       try {
-        const url = `https://api.themoviedb.org/3/${isSeries ? 'tv' : 'movie'}/${id}`;
-        const res = await axios.get(url, { params: { api_key: process.env.TMDB_API_KEY } });
+        const url = `https://api.themoviedb.org/3/${isSeries ? "tv" : "movie"}/${id}`;
+        const res = await axios.get(url, {
+          params: { api_key: process.env.TMDB_API_KEY },
+        });
         return res.data;
       } catch {
         return null;
       }
     };
 
-    const movies = await Promise.all((user.watchlist || []).map(id => fetchDetails(id, false)));
-    const series = await Promise.all((user.seriesWatchlist || []).map(id => fetchDetails(id, true)));
+    const movies = await Promise.all(
+      (user.watchlist || []).map((id) => fetchDetails(id, false)),
+    );
+    const series = await Promise.all(
+      (user.seriesWatchlist || []).map((id) => fetchDetails(id, true)),
+    );
 
     const header = "type,title,year,tmdbId";
-    const movieRows = movies.filter(Boolean).map(
-      m => `movie,"${m.title}",${m.release_date?.slice(0,4) || ""},${m.id}`
-    );
-    const seriesRows = series.filter(Boolean).map(
-      s => `series,"${s.name}",${s.first_air_date?.slice(0,4) || ""},${s.id}`
-    );
+    const movieRows = movies
+      .filter(Boolean)
+      .map(
+        (m) =>
+          `movie,"${m.title}",${m.release_date?.slice(0, 4) || ""},${m.id}`,
+      );
+    const seriesRows = series
+      .filter(Boolean)
+      .map(
+        (s) =>
+          `series,"${s.name}",${s.first_air_date?.slice(0, 4) || ""},${s.id}`,
+      );
     const csv = [header, ...movieRows, ...seriesRows].join("\n");
 
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", 'attachment; filename="watchlist.csv"');
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="watchlist.csv"',
+    );
     res.send(csv);
   } catch (error) {
     console.error(`Error: ${error.message}`);
@@ -379,13 +411,13 @@ const clearWatchlist = asyncHandler(async (req, res) => {
     const user = await User.findByIdAndUpdate(
       userId,
       { watchlist: [], seriesWatchlist: [] },
-      { new: true }
+      { new: true },
     );
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.status(200).json({ message: 'Watchlist cleared' });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ message: "Watchlist cleared" });
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    res.status(500).json({ message: 'Failed to clear watchlist' });
+    res.status(500).json({ message: "Failed to clear watchlist" });
   }
 });
 
@@ -397,13 +429,16 @@ const setWatchlistVisibility = asyncHandler(async (req, res) => {
     const user = await User.findByIdAndUpdate(
       userId,
       { isWatchlistPrivate: isPrivate },
-      { new: true }
+      { new: true },
     );
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.status(200).json({ message: 'Visibility updated', isWatchlistPrivate: user.isWatchlistPrivate });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({
+      message: "Visibility updated",
+      isWatchlistPrivate: user.isWatchlistPrivate,
+    });
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    res.status(500).json({ message: 'Failed to update visibility' });
+    res.status(500).json({ message: "Failed to update visibility" });
   }
 });
 
@@ -459,8 +494,6 @@ const addToFavorites = asyncHandler(async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
 
 const removeFromFavorites = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -544,12 +577,10 @@ const getFavoriteSeries = asyncHandler(async (req, res) => {
     res.status(200).json(user.favoriteSeries);
   } catch (error) {
     console.error(`Error fetching favorite series: ${error.message}`, error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to fetch favorite series",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to fetch favorite series",
+      error: error.message,
+    });
   }
 });
 
@@ -644,14 +675,282 @@ const removeFavoriteSeries = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error(`Error removing favorite series: ${error.message}`, error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to remove favorite series",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to remove favorite series",
+      error: error.message,
+    });
   }
 });
+
+const getTasteProfile = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const profile = {
+    genres: {},
+    languages: {},
+  };
+
+  try {
+    const diaryEntries = await DiaryEntry.find({ user: userId })
+      .sort({ watchedDate: -1 })
+      .limit(20);
+
+    const filtered = diaryEntries.filter(
+      (entry) => entry.rating >= 4 && entry.mediaId,
+    );
+
+    for (const diaryEntry of filtered) {
+      try {
+        const endpoint =
+          diaryEntry.mediaType === "tv"
+            ? `${TMDB_BASE_URL}/tv/${diaryEntry.mediaId}`
+            : `${TMDB_BASE_URL}/movie/${diaryEntry.mediaId}`;
+
+        const response = await axios.get(endpoint, {
+          params: { api_key: TMDB_API_KEY },
+          timeout: 10000,
+        });
+
+        const media = response.data;
+        const weight = diaryEntry.rating / 5;
+
+        for (const genre of media.genres || []) {
+          profile.genres[genre.id] = (profile.genres[genre.id] || 0) + weight;
+        }
+
+        const language = media.original_language;
+        if (language) {
+          profile.languages[language] =
+            (profile.languages[language] || 0) + weight;
+        }
+      } catch (innerError) {
+        console.error(
+          `Diary entry ${diaryEntry._id} failed:`,
+          innerError.message,
+        );
+        continue;
+      }
+    }
+
+    res.status(200).json(profile);
+  } catch (error) {
+    console.error("Error building taste profile:", error.message);
+    res.status(500).json({ message: "Failed to build taste profile" });
+  }
+});
+
+
+const TV_GENRE_MAP = {
+  28: null,
+  12: 10759,
+  16: 16,
+  35: 35,
+  80: 80,
+  99: 99,
+  18: 18,
+  10751: 10751,
+  14: null,
+  36: null,
+  27: null,
+  9648: 9648,
+  10402: null,
+  878: 10765,
+  10770: null,
+  53: null,
+  10752: null,
+  37: 37,
+};
+
+const getRecommendations = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  try {
+    const profileRes = await axios.get(
+      `${req.protocol}://${req.get("host")}/api/user/${userId}/recommendations/taste-profile`,
+      { headers: { Authorization: req.headers.authorization } },
+    );
+
+    const profile = profileRes.data;
+
+    const reviews = await Review.find({ userId });
+    const diaryEntries = await DiaryEntry.find({ user: userId })
+      .sort({ watchedDate: -1 })
+      .limit(20);
+
+    const watchedIds = new Set(reviews.map((review) => String(review.movieId)));
+    diaryEntries.forEach((entry) => watchedIds.add(String(entry.mediaId)));
+
+    const topGenreIds = Object.entries(profile.genres || {})
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([genreId]) => Number(genreId));
+
+    const topGenres = topGenreIds.join(",");
+
+    const topLanguage = Object.entries(profile.languages || {}).sort(
+      (a, b) => b[1] - a[1],
+    )[0]?.[0];
+
+    if (!topGenres) {
+      return res.status(200).json({
+        message: "Not enough review data to generate recommendations yet",
+        recommendations: [],
+      });
+    }
+
+    // --- Discover-based candidates (genre + language) ---
+    const tvGenreIds = [
+      ...new Set(topGenreIds.map((id) => TV_GENRE_MAP[id]).filter(Boolean)),
+    ];
+    const tvGenres = tvGenreIds.join("|");
+
+    const movieParams = {
+      api_key: TMDB_API_KEY,
+      with_genres: topGenreIds.join("|"),
+      with_original_language: topLanguage,
+      sort_by: "vote_average.desc",
+      "vote_count.gte": 100,
+    };
+
+    const tvParams = {
+      api_key: TMDB_API_KEY,
+      with_original_language: topLanguage,
+      sort_by: "vote_average.desc",
+      "vote_count.gte": 50,
+    };
+    if (tvGenres) {
+      tvParams.with_genres = tvGenres;
+    }
+
+    // --- Similar/recommendations-based candidates (per top-rated diary entry) ---
+    const topRatedMovies = diaryEntries
+      .filter((e) => e.mediaType !== "tv" && e.rating >= 8 && e.mediaId)
+      .slice(0, 5);
+    const topRatedTv = diaryEntries
+      .filter((e) => e.mediaType === "tv" && e.rating >= 8 && e.mediaId)
+      .slice(0, 5);
+    const topRatedEntries = [...topRatedMovies, ...topRatedTv];
+
+    const similarRequests = topRatedEntries.map(async (entry) => {
+      const base =
+        entry.mediaType === "tv"
+          ? `${TMDB_BASE_URL}/tv/${entry.mediaId}`
+          : `${TMDB_BASE_URL}/movie/${entry.mediaId}`;
+
+      let r = await axios
+        .get(`${base}/recommendations`, {
+          params: { api_key: TMDB_API_KEY },
+          timeout: 8000,
+        })
+        .catch(() => null);
+
+      if (!r || r.data.results.length === 0) {
+        r = await axios
+          .get(`${base}/similar`, {
+            params: { api_key: TMDB_API_KEY },
+            timeout: 8000,
+          })
+          .catch(() => null);
+      }
+
+      return { mediaType: entry.mediaType, results: r?.data?.results || [] };
+    });
+
+    const [movieRes, tvRes, ...similarRes] = await Promise.all([
+      axios.get(`${TMDB_BASE_URL}/discover/movie`, {
+        params: movieParams,
+        timeout: 8000,
+      }),
+      axios.get(`${TMDB_BASE_URL}/discover/tv`, {
+        params: tvParams,
+        timeout: 8000,
+      }),
+      ...similarRequests,
+    ]);
+
+    const discoverMovies = movieRes.data.results.map((m) => ({
+      ...m,
+      mediaType: "movie",
+      title: m.title,
+      releaseDate: m.release_date,
+    }));
+
+    const discoverTv = tvRes.data.results.map((t) => ({
+      ...t,
+      mediaType: "tv",
+      title: t.name,
+      releaseDate: t.first_air_date,
+    }));
+
+    const similarItems = similarRes.flatMap(({ mediaType, results }) =>
+      results.map((item) => ({
+        ...item,
+        mediaType,
+        title: mediaType === "tv" ? item.name : item.title,
+        releaseDate:
+          mediaType === "tv" ? item.first_air_date : item.release_date,
+        _fromSimilar: true,
+      })),
+    );
+
+    const combinedMap = new Map();
+    for (const item of [...similarItems, ...discoverMovies, ...discoverTv]) {
+      const key = `${item.mediaType}-${item.id}`;
+      if (!combinedMap.has(key)) {
+        combinedMap.set(key, item);
+      }
+    }
+
+    const combined = Array.from(combinedMap.values());
+
+    const sortFn = (a, b) => {
+      if (a._fromSimilar !== b._fromSimilar) return a._fromSimilar ? -1 : 1;
+      if (b.vote_average !== a.vote_average) return b.vote_average - a.vote_average;
+      if (b.vote_count !== a.vote_count) return b.vote_count - a.vote_count;
+      return a.id - b.id;
+    };
+
+    const filtered = combined.filter((item) => !watchedIds.has(String(item.id)));
+
+    const movieItems = filtered.filter((item) => item.mediaType === "movie").sort(sortFn);
+    const tvItems = filtered.filter((item) => item.mediaType === "tv").sort(sortFn);
+
+    const MOVIE_QUOTA = 10;
+    const TV_QUOTA = 10;
+
+    let recommendations = [
+      ...movieItems.slice(0, MOVIE_QUOTA),
+      ...tvItems.slice(0, TV_QUOTA),
+    ];
+
+    const shortfall = MOVIE_QUOTA + TV_QUOTA - recommendations.length;
+    if (shortfall > 0) {
+      const usedIds = new Set(recommendations.map((r) => `${r.mediaType}-${r.id}`));
+      const backfillPool = [...movieItems, ...tvItems]
+        .filter((item) => !usedIds.has(`${item.mediaType}-${item.id}`))
+        .sort(sortFn);
+      recommendations.push(...backfillPool.slice(0, shortfall));
+    }
+
+    recommendations.sort(sortFn);
+
+    recommendations = recommendations
+      .slice(0, 20)
+      .map(({ _fromSimilar, ...rest }) => rest);
+
+    res.status(200).json({ recommendations });
+  } catch (error) {
+    console.error(`Error generating recommendations: ${error.message}`, error);
+    res.status(500).json({
+      message: "Failed to generate recommendations",
+      error: error.message,
+    });
+  }
+});
+
+
+
+
 
 module.exports = {
   getUserStats,
@@ -670,4 +969,6 @@ module.exports = {
   exportAllWatchlists,
   clearWatchlist,
   setWatchlistVisibility,
+  getRecommendations,
+  getTasteProfile,
 };
