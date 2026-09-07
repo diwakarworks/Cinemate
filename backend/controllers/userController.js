@@ -739,7 +739,6 @@ const getTasteProfile = asyncHandler(async (req, res) => {
   }
 });
 
-
 const TV_GENRE_MAP = {
   28: null,
   12: 10759,
@@ -798,7 +797,6 @@ const getRecommendations = asyncHandler(async (req, res) => {
       });
     }
 
-    // --- Discover-based candidates (genre + language) ---
     const tvGenreIds = [
       ...new Set(topGenreIds.map((id) => TV_GENRE_MAP[id]).filter(Boolean)),
     ];
@@ -822,7 +820,6 @@ const getRecommendations = asyncHandler(async (req, res) => {
       tvParams.with_genres = tvGenres;
     }
 
-    // --- Similar/recommendations-based candidates (per top-rated diary entry) ---
     const topRatedMovies = diaryEntries
       .filter((e) => e.mediaType !== "tv" && e.rating >= 8 && e.mediaId)
       .slice(0, 5);
@@ -830,6 +827,8 @@ const getRecommendations = asyncHandler(async (req, res) => {
       .filter((e) => e.mediaType === "tv" && e.rating >= 8 && e.mediaId)
       .slice(0, 5);
     const topRatedEntries = [...topRatedMovies, ...topRatedTv];
+
+    
 
     const similarRequests = topRatedEntries.map(async (entry) => {
       const base =
@@ -853,7 +852,7 @@ const getRecommendations = asyncHandler(async (req, res) => {
           .catch(() => null);
       }
 
-      return { mediaType: entry.mediaType, results: r?.data?.results || [] };
+      return { mediaType: entry.mediaType, sourceTitle: entry.title, results: r?.data?.results || [] };
     });
 
     const [movieRes, tvRes, ...similarRes] = await Promise.all([
@@ -882,7 +881,7 @@ const getRecommendations = asyncHandler(async (req, res) => {
       releaseDate: t.first_air_date,
     }));
 
-    const similarItems = similarRes.flatMap(({ mediaType, results }) =>
+    const similarItems = similarRes.flatMap(({ mediaType, sourceTitle, results }) =>
       results.map((item) => ({
         ...item,
         mediaType,
@@ -890,8 +889,11 @@ const getRecommendations = asyncHandler(async (req, res) => {
         releaseDate:
           mediaType === "tv" ? item.first_air_date : item.release_date,
         _fromSimilar: true,
+        _sourceTitle: sourceTitle,
       })),
     );
+
+
 
     const combinedMap = new Map();
     for (const item of [...similarItems, ...discoverMovies, ...discoverTv]) {
@@ -936,7 +938,7 @@ const getRecommendations = asyncHandler(async (req, res) => {
 
     recommendations = recommendations
       .slice(0, 20)
-      .map(({ _fromSimilar, ...rest }) => rest);
+      .map(({ _fromSimilar, _sourceTitle, ...rest }) => rest);
 
     res.status(200).json({ recommendations });
   } catch (error) {
@@ -947,10 +949,6 @@ const getRecommendations = asyncHandler(async (req, res) => {
     });
   }
 });
-
-
-
-
 
 module.exports = {
   getUserStats,
