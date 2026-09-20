@@ -307,100 +307,348 @@ const exportAllWatchlists = asyncHandler(async (req, res) => {
   }
 });
 
+
+
+
 const importAllWatchlists = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+
   try {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    if (!req.file) {
+      console.log(" No file uploaded");
+      return res.status(400).json({
+        message: "No file uploaded",
+      });
+    }
 
+  
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
 
+    if (!user) {
+      console.log(" User not found");
+
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    
     const csvText = req.file.buffer.toString("utf-8");
+
     const { data: rows } = Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (header) => header.trim(),
     });
-    const results = { imported: 0, skipped: 0, unmatched: [] };
 
-    for (const row of rows) {
-      const type = (row.type || "movie").toLowerCase();
-      const title = row.title || row.Title;
-      const year = row.year || row.Year;
-      if (!title) continue;
+    console.log(`CSV rows found: ${rows.length}`);
 
-      const searchUrl =
-        type === "series"
-          ? "https://api.themoviedb.org/3/search/tv"
-          : "https://api.themoviedb.org/3/search/movie";
-      const searchParams =
-        type === "series"
-          ? {
-              api_key: process.env.TMDB_API_KEY,
-              query: title,
-              first_air_date_year: year,
-            }
-          : { api_key: process.env.TMDB_API_KEY, query: title, year };
+    const results = {
+      imported: 0,
+      skipped: 0,
+      unmatched: [],
+      errors: [],
+    };
+
+    
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+
+    
+      const title = (
+        row.title ||
+        row.Title ||
+        row.Name ||
+        row.name ||
+        ""
+      ).trim();
+      const yearValue =
+        row.year ||
+        row.Year ||
+        "";
+
+      const year = yearValue
+        ? Number(String(yearValue).trim())
+        : undefined;
+
+      if (!title) {
+        console.log(` [${i + 1}/${rows.length}] No title found`);
+
+        continue;
+      }
+
+      console.log(
+        `\n [${i + 1}/${rows.length}] ${title} ${
+          year ? `(${year})` : ""
+        }`
+      );
 
       try {
-        const searchRes = await axios.get(searchUrl, { params: searchParams });
-        const match = searchRes.data.results[0];
-        if (!match) {
+       
+        const movieResponse = await axios.get(
+          "https://api.themoviedb.org/3/search/movie",
+          {
+            params: {
+              api_key: process.env.TMDB_API_KEY,
+              query: title,
+              ...(year && { year }),
+            },
+          }
+        );
+
+    
+        const seriesResponse = await axios.get(
+          "https://api.themoviedb.org/3/search/tv",
+          {
+            params: {
+              api_key: process.env.TMDB_API_KEY,
+              query: title,
+              ...(year && {
+                first_air_date_year: year,
+              }),
+            },
+          }
+        );
+
+        const movieResults = movieResponse.data.results || [];
+        const seriesResults = seriesResponse.data.results || [];
+
+        const movie = movieResults[0];
+        const series = seriesResults[0];
+
+        let type = null;
+        let match = null;
+
+        
+        if (movie && !series) {
+          type = "movie";
+          match = movie;
+        }
+
+        else if (!movie && series) {
+          type = "series";
+          match = series;
+        }
+
+      
+        else if (movie && series) {
+          const movieTitle = (
+            movie.title ||
+            ""
+          ).toLowerCase();
+
+          const seriesTitle = (
+            series.name ||
+            ""
+          ).toLowerCase();
+
+          const normalizedTitle = title.toLowerCase();
+
+          
+          const movieExact =
+            movieTitle === normalizedTitle;
+
+          const seriesExact =
+            seriesTitle === normalizedTitle;
+
+          if (seriesExact && !movieExact) {
+            type = "series";
+            match = series;
+          } else if (movieExact && !seriesExact) {
+            type = "movie";
+            match = movie;
+          }
+
+          
+          else {
+            const movieYear = movie.release_date
+              ? Number(movie.release_date.slice(0, 4))
+              : null;
+
+            const seriesYear = series.first_air_date
+              ? Number(series.first_air_date.slice(0, 4))
+              : null;
+
+            const movieYearMatch =
+              year && movieYear === year;
+
+            const seriesYearMatch =
+              year && seriesYear === year;
+
+            if (
+              seriesYearMatch &&
+              !movieYearMatch
+            ) {
+              type = "series";
+              match = series;
+            } else if (
+              movieYearMatch &&
+              !seriesYearMatch
+            ) {
+              type = "movie";
+              match = movie;
+            } else {
+              if (
+                (series.popularity || 0) >
+                (movie.popularity || 0)
+              ) {
+                type = "series";
+                match = series;
+              } else {
+                type = "movie";
+                match = movie;
+              }
+            }
+          }
+        }
+
+
+        if (!match || !type) {
+          console.log(
+            ` No TMDB match: ${title}`
+          );
+
           results.unmatched.push(title);
+
           continue;
         }
 
         const tmdbId = String(match.id);
 
+        console.log(
+          ` ${title} → ${type} → TMDB ${tmdbId}`
+        );
+
         if (type === "series") {
-          let series = await Series.findOne({ tmdbId });
-          if (!series) {
-            series = await Series.create({
-              tmdbId,
-              title: match.name,
-              year: match.first_air_date
-                ? Number(match.first_air_date.slice(0, 4))
-                : undefined,
-              poster_path: match.poster_path,
-              vote_average: match.vote_average,
-            });
+          let seriesDocument =
+            await Series.findOne({ tmdbId });
+
+          
+          if (!seriesDocument) {
+            console.log(
+              `➕ Creating series: ${match.name}`
+            );
+
+            seriesDocument =
+              await Series.create({
+                tmdbId,
+                title: match.name,
+
+                year: match.first_air_date
+                  ? Number(
+                      match.first_air_date.slice(0, 4)
+                    )
+                  : undefined,
+
+                poster_path:
+                  match.poster_path,
+
+                vote_average:
+                  match.vote_average,
+              });
           }
-          if (user.seriesWatchlist.includes(tmdbId)) {
+          if (
+            user.seriesWatchlist.includes(
+              tmdbId
+            )
+          ) {
+            console.log(
+              `⏭ Already in series watchlist: ${title}`
+            );
+
             results.skipped++;
+
             continue;
           }
+
+          
           user.seriesWatchlist.push(tmdbId);
-        } else {
-          let movie = await Movie.findOne({ tmdbId });
-          if (!movie) {
-            movie = await Movie.create({
-              tmdbId,
-              title: match.title,
-              year: match.release_date
-                ? Number(match.release_date.slice(0, 4))
-                : undefined,
-              poster_path: match.poster_path,
-              vote_average: match.vote_average,
-            });
+
+        }
+
+        else {
+          let movieDocument =
+            await Movie.findOne({ tmdbId });
+
+       
+          if (!movieDocument) {
+            console.log(
+              `➕ Creating movie: ${match.title}`
+            );
+
+            movieDocument =
+              await Movie.create({
+                tmdbId,
+                title: match.title,
+
+                year: match.release_date
+                  ? Number(
+                      match.release_date.slice(0, 4)
+                    )
+                  : undefined,
+
+                poster_path:
+                  match.poster_path,
+
+                vote_average:
+                  match.vote_average,
+              });
           }
-          if (user.watchlist.includes(tmdbId)) {
+
+        
+          if (
+            user.watchlist.includes(tmdbId)
+          ) {
+            console.log(
+              `Already in movie watchlist: ${title}`
+            );
+
             results.skipped++;
+
             continue;
           }
+
           user.watchlist.push(tmdbId);
+
+          console.log(
+            `Added movie: ${title}`
+          );
         }
 
         results.imported++;
+
+        console.log(
+          `Successfully imported: ${title}`
+        );
       } catch (rowError) {
-        console.error(`Failed to process row "${title}": ${rowError.message}`);
-        results.unmatched.push(title);
+        console.error(
+          `❌ Failed "${title}":`,
+          rowError.message
+        );
+
+        results.errors.push({
+          title,
+          error: rowError.message,
+        });
       }
     }
 
+  
     await user.save();
-    res.json(results);
+
+
+
+    return res.json(results);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
-    res.status(500).json({ message: "Failed to import watchlist" });
+    console.error(
+      " Import watchlist error:",
+      error
+    );
+
+    return res.status(500).json({
+      message: "Failed to import watchlist",
+      error: error.message,
+    });
   }
 });
 
