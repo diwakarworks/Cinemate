@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { BiArrowBack, BiDotsVerticalRounded } from "react-icons/bi";
 
-const API_URL = "https://cinemate-6k9l.onrender.com"; // Replace with your backend URL
+const API_URL = "https://cinemate-6k9l.onrender.com";
 
 const Watchlist = () => {
   const { userId } = useParams();
@@ -120,6 +120,8 @@ const Watchlist = () => {
       const res = await axios.post(`${API_URL}/api/user/watchlist/import-all`, formData, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
       });
+      const data = res.data;
+      console.log("Import result:", data);
       alert(`Imported: ${res.data.imported}, Skipped: ${res.data.skipped}, Unmatched: ${res.data.unmatched.length}`);
       fetchWatchlist();
     } catch (err) {
