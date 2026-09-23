@@ -11,6 +11,7 @@ const rankingRoutes = require('./routes/rankingRoutes');
 const listRoutes = require('./routes/listsRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const peopleRoutes = require('./routes/peopleRoutes');
+const naturalSearchRoutes = require('./routes/naturalSearchRoutes');
  
 
 connectDB();
@@ -29,6 +30,7 @@ app.use('/api/ranking',rankingRoutes);
 app.use('/api/lists',listRoutes);
 app.use('/api/search',searchRoutes);
 app.use('/api/people',peopleRoutes);
+app.use('/api/search/natural',naturalSearchRoutes);
 
 const PORT = process.env.PORT || 5002;
 

@@ -1,9 +1,10 @@
 const express = require('express');
-const { searchMovies } = require('../controllers/searchController');
+const { getMoods,discoverSearch } = require('../controllers/searchController');
 const {protect} = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.post('/movies', protect, searchMovies);
+
+router.route("/discover").get(protect, getMoods).post(protect, discoverSearch);
 
 module.exports = router;
