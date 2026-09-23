@@ -245,6 +245,7 @@ const Navbar = () => {
     { label: "lists", to: `/${userId}/userlists` },
     { label: "Discover", to: "/ai/search" },
     { label: "sign in", to: "/login" },
+    {label: "ask", to:"/ai/natural-search"}
   ];
 
   const dropdownLinks = [

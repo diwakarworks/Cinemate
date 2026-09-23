@@ -1,18 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
-const apiURL = "https://cinemate-6k9l.onrender.com";
+const apiURL = "https://cinemate-6k9l.onrender.com"; // Replace with your backend API URL
 
 function AISearch() {
   const [query, setQuery] = useState("");
+  const [moods, setMoods] = useState([]);
+  const [activeMood, setActiveMood] = useState(null);
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
-  async function handleSearch() {
-    if (!query) return;
+  useEffect(() => {
+    async function loadMoods() {
+      try {
+        const token = localStorage.getItem("token");
+        const { data } = await axios.get(`${apiURL}/api/search/discover`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setMoods(data);
+      } catch (err) {
+        // mood chips are optional UI — fail silently, free-text search still works
+      }
+    }
+    loadMoods();
+  }, []);
+
+  async function runDiscover(body) {
     const token = localStorage.getItem("token");
     if (!token) {
       setError("Unauthorized: No token found. Please log in.");
@@ -21,17 +37,28 @@ function AISearch() {
     setLoading(true);
     setError("");
     try {
-      const { data } = await axios.post(
-        `${apiURL}/api/search/movies`,
-        { query },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMovies(data);
+      const { data } = await axios.post(`${apiURL}/api/search/discover`, body, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMovies(data.results || []);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleSearch() {
+    if (!query) return;
+    setActiveMood(null);
+    runDiscover({ query });
+  }
+
+  function handleMoodClick(moodKey) {
+    setQuery("");
+    setSearchOpen(false);
+    setActiveMood(moodKey);
+    runDiscover({ mood: moodKey });
   }
 
   function handleKeyDown(e) {
@@ -87,6 +114,25 @@ function AISearch() {
         </div>
       </div>
 
+      {/* Mood chips */}
+      {moods.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-8">
+          {moods.map((m) => (
+            <button
+              key={m.key}
+              onClick={() => handleMoodClick(m.key)}
+              className={`text-xs font-medium rounded-full px-4 py-2 border transition-all duration-200 ${
+                activeMood === m.key
+                  ? "bg-red-600 border-red-600 text-white"
+                  : "bg-[#1c1f2e] border-[#2e3247] text-zinc-300 hover:border-red-500"
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Error */}
       {error && (
         <p className="text-red-400 text-sm mb-6 border border-red-800 bg-red-950/40 px-4 py-2 rounded-lg w-fit">
@@ -115,8 +161,8 @@ function AISearch() {
         <div className="grid grid-cols-5 gap-4">
           {movies.map((movie, index) => (
             <Link
-              key={movie.id}
-              to={`/movie/${movie.id}`}
+              key={`${movie.media_type}-${movie.id}`}
+              to={`/${movie.media_type === "tv" ? "show" : "movie"}/${movie.id}`}
               className={`group relative rounded-2xl overflow-hidden bg-[#1c1f2e] block transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/60 ${
                 index === 0 ? "ring-2 ring-red-500/60" : ""
               }`}
@@ -132,9 +178,11 @@ function AISearch() {
                 {/* Bottom fade */}
                 <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#1c1f2e] to-transparent" />
 
-                
+                {/* Media type badge */}
+                <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wide bg-black/70 text-zinc-200 px-2 py-1 rounded-md">
+                  {movie.media_type === "tv" ? "Show" : "Movie"}
+                </span>
 
-                
               </div>
 
               {/* Info */}

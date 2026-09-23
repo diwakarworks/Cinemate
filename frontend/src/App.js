@@ -55,7 +55,7 @@ import FavoriteSeries from './pages/FavoriteSeries';
 import Countries from './pages/Countries';
 import SeriesCountries from './pages/SeriesCountries';
 import Suggestions from './pages/Suggestions';
-
+import AINaturalSearch from './pages/AINaturalSearch';
 
 
 
@@ -124,6 +124,7 @@ const App = () => {
         <Route path="/countries" element={<Countries />} />
         <Route path="/series/countries" element={<SeriesCountries />} />
         <Route path="/:userId/suggestions" element={<Suggestions />} />
+        <Route path="/ai/natural-search" element={<AINaturalSearch />} />
 
       </Routes>
     </div>
