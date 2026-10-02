@@ -18,14 +18,14 @@ const GENRE_MAP_MOVIE = {
 
 const GENRE_MAP_TV = {
   crime: 80,
-  thriller: 9648, // TMDB TV has no Thriller genre — mystery is the nearest match
+  thriller: 9648,
   drama: 18,
-  action: 10759, // "Action & Adventure" on TV
-  horror: null, // no TV Horror genre — dropped, not mapped to something wrong
+  action: 10759, 
+  horror: null, 
   mystery: 9648,
 };
 
-// Minimal country name -> ISO 3166-1 code map (extend as needed)
+
 const COUNTRY_MAP = {
   "south korea": "KR",
   korea: "KR",
@@ -36,10 +36,6 @@ const COUNTRY_MAP = {
   india: "IN",
 };
 
-// Minimal country -> primary spoken language, used as a fallback filter.
-// with_origin_country relies on TMDB's production-country metadata, which
-// is patchy for older/foreign titles; original_language is more reliably
-// populated and catches titles origin_country misses.
 const COUNTRY_LANGUAGE_MAP = {
   KR: "ko",
   JP: "ja",
@@ -53,12 +49,7 @@ const buildGenreIds = (genres = [], map) =>
 const buildCountryCode = (country) =>
   country ? COUNTRY_MAP[country.toLowerCase()] : null;
 
-// Resolve free-text mood/tone words ("dark", "atmospheric", "slow burn",
-// "neo-noir") into real TMDB keyword IDs via /search/keyword. This is the
-// correct place for tone — TMDB genres were never meant to carry it, which
-// is why "dark" used to get mapped onto whatever genre was closest and
-// silently distorted results. Runs all lookups in parallel; anything with
-// no match is dropped rather than guessed.
+
 const resolveKeywordIds = async (moodWords = []) => {
   if (!moodWords.length) return [];
   const lookups = await Promise.all(
@@ -74,10 +65,7 @@ const resolveKeywordIds = async (moodWords = []) => {
   return lookups.filter(Boolean);
 };
 
-// Resolve cast/director names into TMDB person IDs via /search/person.
-// Movie discover supports with_cast (actor) and with_crew (director, etc);
-// TV discover only supports with_people (any credited person), so we reuse
-// the same resolved IDs there.
+
 const resolvePersonIds = async (names = []) => {
   if (!names.length) return [];
   const lookups = await Promise.all(
@@ -93,9 +81,7 @@ const resolvePersonIds = async (names = []) => {
   return lookups.filter(Boolean);
 };
 
-// Normalize a movie or TV result into one shared shape so the frontend
-// can render either through the same grid and dispatch to MovieCard /
-// ShowCard based on media_type.
+
 const normalizeMovie = (m) => ({
   id: m.id,
   media_type: "movie",
@@ -124,9 +110,6 @@ const naturalSearch = async (req, res) => {
       return res.status(400).json({ message: "Search query required" });
     }
 
-    // 1. Convert natural language -> structured filters, including which
-    // media type the query itself implies (e.g. "series", "show", "K-drama"
-    // vs "movie", "film")
     const completion = await openai.chat.completions.create({
       model: "openai/gpt-4o-mini",
       response_format: { type: "json_object" },
@@ -206,8 +189,6 @@ const naturalSearch = async (req, res) => {
       ...(countryCode && { with_origin_country: countryCode }),
       ...(languageCode && { with_original_language: languageCode }),
       ...(filters.minRating && { "vote_average.gte": filters.minRating }),
-      // vote_count floor keeps "highly rated" from surfacing obscure titles
-      // with a single 10/10 vote — require a real sample size first.
       ...((filters.preferHighlyRated || filters.minRating) && {
         "vote_count.gte": 50,
       }),
@@ -218,9 +199,6 @@ const naturalSearch = async (req, res) => {
         "primary_release_date.lte": `${filters.toYear}-12-31`,
       }),
     });
-
-    // TV uses first_air_date range params instead of primary_release_date,
-    // and with_people instead of with_cast (TV discover has no with_cast).
     const buildTvParams = (genreIds) => ({
       api_key: process.env.TMDB_API_KEY,
       sort_by: sortBy,
@@ -241,7 +219,6 @@ const naturalSearch = async (req, res) => {
       }),
     });
 
-    // 2. Query TMDB — movies and TV in parallel, only what was asked for
     const requests = [];
 
     if (wantMovies) {
@@ -274,13 +251,9 @@ const naturalSearch = async (req, res) => {
     const shows = wantShows
       ? (tvResponse.data.results || []).map(normalizeShow)
       : [];
-
-    // 3. Return movies and shows as separate arrays — no merging.
-    // A "movies" query gets only `movies` populated; a "series" query gets
-    // only `shows`; only an explicit "all" query populates both.
     res.json({
       filters,
-      mediaType: effectiveMediaType, // "movie" | "tv" | "all"
+      mediaType: effectiveMediaType, 
       movies,
       shows,
       counts: { movies: movies.length, shows: shows.length },

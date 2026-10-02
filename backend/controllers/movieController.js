@@ -30,7 +30,6 @@ const fetchMovies = asyncHandler(async (req, res) => {
 
     } catch (error) {
         console.error(`Error fetching movies: ${error.message}`, error);
-
        
         res.status(500).json({
             message: "Failed to fetch movies",
