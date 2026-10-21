@@ -13,7 +13,11 @@ const diaryEntrySchema = new mongoose.Schema({
     review: { type: String },
     directorId: { type: Number },
     popularity: { type: Number, default: 0 },
-    runtime: { type: Number, default: 0 } 
+    runtime: { type: Number, default: 0 },
+    embedding: {
+    type: [Number],
+    default: undefined,
+},
 });
 
 module.exports = mongoose.model('DiaryEntry', diaryEntrySchema);

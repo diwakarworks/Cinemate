@@ -12,6 +12,8 @@ const listRoutes = require('./routes/listsRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const peopleRoutes = require('./routes/peopleRoutes');
 const naturalSearchRoutes = require('./routes/naturalSearchRoutes');
+const ragRoutes = require('./routes/ragRoutes');
+const normalChatRoutes = require("./routes/normalChatRoutes");
  
 
 connectDB();
@@ -31,6 +33,8 @@ app.use('/api/lists',listRoutes);
 app.use('/api/search',searchRoutes);
 app.use('/api/people',peopleRoutes);
 app.use('/api/search/natural',naturalSearchRoutes);
+app.use('/api/rag', ragRoutes);
+app.use("/api/chat", normalChatRoutes);
 
 const PORT = process.env.PORT || 5002;
 

@@ -12,6 +12,10 @@ const movieSchema = new mongoose.Schema({
     genre_ids: [{ type: Number }],
     cast: [{ type: String }],
     userComments: [{ username: String, comment: String }],
+    embedding: {
+    type: [Number],
+    default: undefined
+    }   
 });
 
 const Movie = mongoose.model('Movie', movieSchema);
