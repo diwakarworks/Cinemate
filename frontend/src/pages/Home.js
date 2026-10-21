@@ -3,6 +3,7 @@ import axios from "axios";
 import MovieCard from "../components/MovieCard";
 import { Link } from "react-router-dom";
 import ShowCard from '../components/ShowCard';
+import CinemateChat from "../components/CinemateChat";
 
 const Home = () => {
   const [popularMovies, setPopularMovies] = useState([]);
@@ -164,6 +165,7 @@ const Home = () => {
           Next
         </button>
       </div>
+      <CinemateChat />
     </div>
   );
 };
