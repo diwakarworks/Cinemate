@@ -8,7 +8,7 @@ async function normalChatCompletion(messages) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_CHAT_MODEL || "qwen/qwen3.7-plus",
+      model: process.env.OPENROUTER_CHAT_MODEL || "openrouter/free",
       messages: [
         {
           role: "system",

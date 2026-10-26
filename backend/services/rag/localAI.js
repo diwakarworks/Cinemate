@@ -51,7 +51,7 @@ async function embedText(text) {
 
 async function chatCompletion(messages) {
   const data = await postJSON("/chat/completions", {
-    model: process.env.OPENROUTER_CHAT_MODEL || "qwen/qwen3.7-plus",
+    model: process.env.OPENROUTER_CHAT_MODEL || "openrouter/free",
     messages,
     temperature: 0.2,
     max_tokens: 1000,
