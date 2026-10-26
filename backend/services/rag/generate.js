@@ -23,21 +23,40 @@ async function generateRagAnswer(question, diaryEntries = []) {
   const response = await chatCompletion([
     {
       role: "system",
-      content: `You are Cinemate AI. Use the user's diary entries to infer their taste and recommend new movies or TV series.
 
-Instructions:
-- Follow the media type requested in the question.
-- Recommend titles that are not present in the supplied diary entries.
-- Use diary ratings and reviews to infer preferences.
-- Recommend exactly one title if the user asks for one.
-- Return only the recommended title, without descriptions or explanations.
-- Never claim a recommendation was watched by the user.
-- Cite diary entry IDs that support your taste inference.
-- Never put diary entry IDs in the recommendations array.
+      content: `You are Cinemate AI, a personalized movie and TV series recommendation assistant.
+
+Return exactly 5 distinct recommendations unless the user requests a different number.
+
+Rules:
+- Follow every constraint in the user's question, including country, genre, language, release period, and media type.
+- For Korean crime films, recommend only films produced in South Korea that belong to the crime genre.
+- For TV series requests, recommend TV series only.
+- For movie requests, recommend movies only.
+- If no media type is specified, movies and TV series are both allowed.
+- Never recommend titles already present in the supplied diary entries.
+- Use ratings and reviews to infer the user's taste.
+- Do not recommend a title unless you have reasonable confidence it matches the requested constraints.
+- If you cannot confidently provide 5 relevant titles, return only the titles you can support.
+- Write a short, natural explanation of why the recommendations fit the user's request and diary.
+- Never claim the user watched a recommended title.
+- Cite only supplied diary entry IDs that support your taste inference.
+- Never invent diary entry IDs.
 
 Return ONLY valid JSON:
-{"recommendations":["Barry"],"citations":["DIARY_ENTRY_ID"]}
+{
+  "answer": "A short explanation of the recommendations.",
+  "recommendations": [
+    "Movie One",
+    "Movie Two",
+    "Movie Three",
+    "Movie Four",
+    "Movie Five"
+  ],
+  "citations": ["DIARY_ENTRY_ID"]
+}
 
+The answer field must be a non-empty string.
 The recommendations field must be an array of title strings.
 The citations field must contain only supplied diary entry IDs.`,
     },
@@ -67,7 +86,7 @@ The citations field must contain only supplied diary entry IDs.`,
   if (
     !Array.isArray(parsed.recommendations) ||
     !parsed.recommendations.every(
-      (title) => typeof title === "string" && title.trim()
+      (title) => typeof title === "string" && title.trim(),
     ) ||
     !Array.isArray(parsed.citations)
   ) {
@@ -80,11 +99,12 @@ The citations field must contain only supplied diary entry IDs.`,
     ...new Set(
       parsed.citations
         .filter((id) => typeof id === "string")
-        .filter((id) => validIds.has(id))
+        .filter((id) => validIds.has(id)),
     ),
   ];
 
   return {
+    answer: parsed.answer || "Here are your recommendations. 🎬",
     recommendations: parsed.recommendations.map((title) => title.trim()),
     citations,
   };

@@ -27,10 +27,9 @@ const chat = asyncHandler(async (req, res) => {
     const cleanedQuestion = question.trim();
     const normalizedQuestion = cleanedQuestion.toLowerCase();
 
-    const asksForTV =
-      /\b(series|tv shows?|television shows?|sitcoms?)\b/.test(
-        normalizedQuestion
-      );
+    const asksForTV = /\b(series|tv shows?|television shows?|sitcoms?)\b/.test(
+      normalizedQuestion,
+    );
 
     const asksForMovies = /\bmovies?\b/.test(normalizedQuestion);
 
@@ -45,13 +44,10 @@ const chat = asyncHandler(async (req, res) => {
       userId,
       cleanedQuestion,
       8,
-      mediaType
+      mediaType,
     );
 
-    const result = await generateRagAnswer(
-      cleanedQuestion,
-      diaryEntries
-    );
+    const result = await generateRagAnswer(cleanedQuestion, diaryEntries);
 
     const citedIds = new Set(result.citations || []);
 
@@ -69,9 +65,10 @@ const chat = asyncHandler(async (req, res) => {
         score: entry.score,
       }));
 
-    return res.json({
+    res.json({
+      answer: result.answer,
       recommendations: result.recommendations,
-      sources,
+      sources: result.citations,
     });
   } catch (error) {
     console.error("RAG chat error:", error);
