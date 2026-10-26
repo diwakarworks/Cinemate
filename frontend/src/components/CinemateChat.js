@@ -5,7 +5,7 @@ import axios from "axios";
 const API_URL = "https://cinemate-6k9l.onrender.com";
 
 const WELCOME_MESSAGE =
-  "Hey, cinephile! 👋 I'm Cinemate, your entertainment companion. Ask me anything about films, series , directors, genres, or recommendations.";
+  "Hey, cinephile!, I'm Cinemate, your entertainment companion. Ask me anything about films, series , directors, genres, or recommendations.";
 
 const CinemateChat = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -93,7 +93,7 @@ const CinemateChat = () => {
     setMessages([
       {
         role: "assistant",
-        content: "Hey, cinephile! 👋 What would you like to watch or discuss today?",
+        content: "Hey, cinephile!, What would you like to watch or discuss today?",
         movies: [],
       },
     ]);
@@ -132,7 +132,7 @@ const CinemateChat = () => {
                 </div>
                 <div className="flex items-center gap-1.5 text-xs leading-tight text-gray-500">
                   <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                  Your movie companion
+                  Your screen companion
                 </div>
               </div>
             </div>

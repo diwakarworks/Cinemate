@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
 
-const API_URL = "https://cinemate-6k9l.onrender.com";
+const API_URL = "https://cinemate-6k9l.onrender.com"; 
 
 const WELCOME_MESSAGE =
-  "Hey, cinephile! 🎬 I can recommend films, series based on your diary. What are you in the mood for?";
+  "Hey, cinephile!, I can recommend films, series based on your diary. What are you in the mood for?";
 
 const DiaryRagChat = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,6 +32,7 @@ const DiaryRagChat = () => {
   const sendMessage = async (event) => {
     event.preventDefault();
 
+
     const query = input.trim();
     if (!query || isLoading) return;
 
@@ -52,7 +53,7 @@ const DiaryRagChat = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       const data = response.data;
@@ -61,14 +62,21 @@ const DiaryRagChat = () => {
         ...prev,
         {
           role: "assistant",
-          content: data.answer || "No answer received.",
-          movies: Array.isArray(data.sources) ? data.sources : [],
+          content:
+            data.answer ||
+            (Array.isArray(data.recommendations) &&
+            data.recommendations.length > 0
+              ? "Here are my recommendations based on your request."
+              : "I couldn't find suitable recommendations. Try another query."),
+          movies: Array.isArray(data.recommendations)
+            ? data.recommendations
+            : [],
         },
       ]);
     } catch (error) {
       console.error(
         "Diary RAG chat error:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
 
       setMessages((prev) => [
@@ -244,7 +252,6 @@ const DiaryRagChat = () => {
       )}
     </div>
   );
-
 
   return createPortal(widget, document.body);
 };
