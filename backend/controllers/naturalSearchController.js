@@ -104,14 +104,14 @@ const normalizeShow = (s) => ({
 
 const naturalSearch = async (req, res) => {
   try {
-    const { query, mediaType: mediaTypeOverride } = req.body; // optional explicit override from a frontend toggle
+    const { query, mediaType: mediaTypeOverride } = req.body; 
 
     if (!query) {
       return res.status(400).json({ message: "Search query required" });
     }
 
     const completion = await openai.chat.completions.create({
-      model: "openai/gpt-4o-mini",
+      model: "openrouter/free",
       response_format: { type: "json_object" },
       messages: [
         {
@@ -162,15 +162,12 @@ const naturalSearch = async (req, res) => {
     const countryCode = buildCountryCode(filters.country);
     const languageCode = countryCode ? COUNTRY_LANGUAGE_MAP[countryCode] : null;
 
-    // Resolve keyword and person names in parallel — independent lookups,
-    // no reason to serialize them.
     const [keywordIds, personIds] = await Promise.all([
       resolveKeywordIds(filters.moodKeywords),
       resolvePersonIds(filters.cast),
     ]);
 
-    // An explicit toggle from the frontend wins; otherwise use what the
-    // LLM inferred from the query text itself.
+ 
     const effectiveMediaType = mediaTypeOverride || filters.mediaType || "movie";
     const wantMovies = effectiveMediaType !== "tv";
     const wantShows = effectiveMediaType !== "movie";

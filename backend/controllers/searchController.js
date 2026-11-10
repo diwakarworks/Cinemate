@@ -11,13 +11,6 @@ const openai = new OpenAI({
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
-// ============================================================
-// Static maps
-// ============================================================
-
-// TMDB genre IDs differ between movie and TV — e.g. movie "Action" is 28,
-// TV's equivalent is 10759 "Action & Adventure". TV has no standalone
-// Horror genre, so that one is dropped rather than mismapped.
 const GENRE_MAP_MOVIE = {
   crime: 80,
   thriller: 53,
@@ -60,14 +53,8 @@ const COUNTRY_MAP = {
   india: "IN",
 };
 
-// with_origin_country relies on TMDB production-country metadata, which is
-// patchy for older/foreign titles. original_language is more reliably
-// populated and catches titles origin_country misses.
 const COUNTRY_LANGUAGE_MAP = { KR: "ko", JP: "ja", FR: "fr", IN: "hi" };
 
-// Curated moods for the chip-based entry point. Hand-written descriptions,
-// embedded once, compared against a candidate pool — no TMDB text param
-// involved, since TMDB has no concept of mood.
 const MOODS = {
   "mind-bending": {
     label: "Mind-bending",
@@ -251,11 +238,6 @@ const MOODS = {
   },
 };
 
-// ============================================================
-// Embedding cache — shared by the vibe path and the mood path, and now
-// keyed by media type since movie id 550 and tv id 550 are different
-// titles on TMDB (they don't share an id namespace).
-// ============================================================
 const embeddingCache = new Map(); // cacheKey -> vector
 
 async function getCachedEmbedding(text, cacheKey) {
@@ -279,9 +261,6 @@ const moodEmbeddingsReady = (async () => {
   }
 })();
 
-// ============================================================
-// TMDB helpers
-// ============================================================
 
 const posterUrl = (path) =>
   path ? `https://image.tmdb.org/t/p/w500${path}` : null;
@@ -350,9 +329,6 @@ async function fetchTopRatedShows(page = 1) {
   return res.data.results;
 }
 
-// Resolve free-text mood/tone words into real TMDB keyword IDs. This is
-// what "dark", "atmospheric", "neo-noir" should hit instead of being
-// smuggled into a genre map.
 async function resolveKeywordIds(words = []) {
   if (!words.length) return [];
   const lookups = await Promise.all(
@@ -383,11 +359,6 @@ async function resolvePersonIds(names = []) {
   return lookups.filter(Boolean);
 }
 
-// ============================================================
-// Normalization — one shape for every path, so the frontend never branches
-// on which engine answered. `score` is present only on ranked (vibe/mood)
-// results; facet results rely on TMDB's own sort_by ordering instead.
-// ============================================================
 
 function normalizeMovie(m, extra = {}) {
   return {
@@ -417,13 +388,10 @@ function normalizeShow(s, extra = {}) {
   };
 }
 
-// ============================================================
-// Path 1 — natural language, LLM extraction -> structured filters
-// ============================================================
 
 async function extractFilters(query) {
   const completion = await openai.chat.completions.create({
-    model: "openai/gpt-4o-mini",
+    model: "openrouter/free",
     response_format: { type: "json_object" },
     messages: [
       {
@@ -470,10 +438,6 @@ async function extractFilters(query) {
   return JSON.parse(completion.choices[0].message.content);
 }
 
-// A query only needs the facet (hard-filter) path if it has something TMDB
-// can filter on exactly. moodKeywords alone do NOT count — that's the vibe
-// path's job. This is the line that fixes mood-only queries returning junk:
-// they now go to embedding ranking instead of a bare with_keywords lookup.
 function hasHardFacets(filters) {
   return Boolean(
     (filters.genres && filters.genres.length) ||
@@ -551,11 +515,6 @@ async function runFacetSearch(filters) {
   ];
 }
 
-// ============================================================
-// Path 2 — vibe search (no hard facets). Embedding similarity over a
-// merged movie + TV candidate pool, scoped by mediaType when the query
-// signals one ("series", "show", "K-drama" -> tv; otherwise both).
-// ============================================================
 
 async function collectVibePool(query, keywordIds, wantMovies, wantShows) {
   const movieRequests = wantMovies
@@ -643,18 +602,6 @@ async function runVibeSearch(query, filters) {
   return scorePool(pool, queryEmbedding);
 }
 
-// ============================================================
-// Path 3 — curated mood (chip click, no query text). mediaType is
-// optional here since a chip carries no text signal; defaults to
-// searching both movies and TV.
-//
-// Movie and TV pools are kept and scored SEPARATELY, then merged with an
-// equal quota from each — otherwise whichever type happens to score
-// higher on average dominates the merged top-N (this was the cause of the
-// TV-heavy "family-safe" results). Pulls 3 pages per list (~120 raw items
-// per side before dedup) so there's enough pool depth to fill 40 results.
-// ============================================================
-
 async function getMoodCandidatePool(mediaType = "all") {
   const wantMovies = mediaType !== "tv";
   const wantShows = mediaType !== "movie";
@@ -735,11 +682,6 @@ async function runMoodSearch(moodKey, mediaType = "all") {
   return scoreBalancedPool(moviePool, showPool, moodVector, { total: 40 });
 }
 
-// ============================================================
-// Single entry point for "What do you want to watch?"
-// { mood: "rainy-sunday", mediaType?: "movie"|"tv"|"all" } -> mood path
-// { query: "..." }                                         -> LLM decides facet vs vibe
-// ============================================================
 
 async function discoverSearch(req, res) {
   try {
@@ -771,8 +713,6 @@ async function discoverSearch(req, res) {
   }
 }
 
-// GET counterpart on the same route — static list, no body, cacheable.
-// Lets the frontend render mood chips from one source of truth.
 function getMoods(req, res) {
   const options = Object.entries(MOODS).map(([key, mood]) => ({
     key,
