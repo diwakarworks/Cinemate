@@ -22,7 +22,7 @@ function AISearch() {
         });
         setMoods(data);
       } catch (err) {
-        // mood chips are optional UI — fail silently, free-text search still works
+        console.error("Error fetching moods:", err);
       }
     }
     loadMoods();
